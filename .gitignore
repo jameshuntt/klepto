@@ -1,1 +1,4 @@
 /target
+/experimental
+/.DS_STORE
+/.gitignore

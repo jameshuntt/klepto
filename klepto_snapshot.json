@@ -1,0 +1,1645 @@
+{
+  "crate_name": "crate",
+  "no_std": false,
+  "functions": [
+    {
+      "fq_name": "crate::Klepto::new",
+      "sig_hash": "fef9f512ae96750e404bd0d24b5be51ac3c337bbd6447e2fab8a8dbca807dcde",
+      "signature": "fn new (crate_name : impl Into < String >) -> KleptoBuilder",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::functions",
+      "sig_hash": "fe3b99f006c538b08c4b1adadb04eeeb9c21a74350caf107f7ffc24f1d0e68fd",
+      "signature": "fn functions (& self) -> FnQuery < '_ >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::imports",
+      "sig_hash": "f3d537950d103ac9d77ed0fc77cee2f5f0ebcc0686acfc6440dda883c436f5d8",
+      "signature": "fn imports (& self) -> ImportQuery < '_ >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::public_api",
+      "sig_hash": "af4e13bd24463830a28606b0f289bb146fbe7d886a59a8bd52ba8ec15e2bb2da",
+      "signature": "fn public_api (& self) -> FnQuery < '_ >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::undocumented_public_api",
+      "sig_hash": "76197267f232027e24e3a98a568e061290b757e3d935abf206755692980500a7",
+      "signature": "fn undocumented_public_api (& self) -> FnQuery < '_ >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::public_surface",
+      "sig_hash": "2869ce07fe580fe7039060b506dee1732ffc4eba9721e2dc66e826aa0d1a8e3a",
+      "signature": "fn public_surface (& self) -> PublicSurface",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::find_paths",
+      "sig_hash": "9852153d5f75f38d963070be4105f9c135f043c2099d04f794fdf7aae2c657b4",
+      "signature": "fn find_paths (& self , needle : & str) -> Vec < PathOccurrence >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::find_macro_invocations",
+      "sig_hash": "9dde3ce4bb262da97621a51b9c4f649dae9e8bcfa545c43c9cd1d59dd1673b2b",
+      "signature": "fn find_macro_invocations (& self , name : & str) -> Vec < MacroInvocation >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::find_calls",
+      "sig_hash": "597a7276ba2d982749c578f0cfb87a14847560fcaf3762b08a0960cf8cad73b8",
+      "signature": "fn find_calls (& self , callee_contains : & str) -> Vec < CallOccurrence >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::doc_coverage",
+      "sig_hash": "0142f6ddbb68331d751e914ca7997ccd60409d62cd53907bf2a34680bf75fa38",
+      "signature": "fn doc_coverage (& self) -> DocCoverage",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::snapshot",
+      "sig_hash": "755d36c54f1772ffb914380ffa2867590c220dd051c8f89f4fcba31f71f40854",
+      "signature": "fn snapshot (& self) -> Snapshot",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::diff_snapshot",
+      "sig_hash": "187ea560d899ddfe15a3c1fc222924b90a0a4074a2e1e28ecbc6bfff024c1a79",
+      "signature": "fn diff_snapshot (& self , old : & Snapshot) -> SnapshotDiff",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Klepto::rules",
+      "sig_hash": "6a9e4da29145e3768bab73d42c41509c0830aff66cadd421ab2aa3b8385e2718",
+      "signature": "fn rules (& self) -> RuleRunner < '_ >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::new",
+      "sig_hash": "cce5ccb18f3ded12b54069d42f1aa2923e109b93e4811d2109469e305d67dcb9",
+      "signature": "fn new (crate_name : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::scan_in_folder",
+      "sig_hash": "af552f962a9fc2e7f28d5fc50a6cc360a60da2b0a301fd8adac2523d5beedffb",
+      "signature": "fn scan_in_folder (mut self , path : impl Into < PathBuf >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::scan_file",
+      "sig_hash": "47fbe61ffba8af5e15c95e4b449b6adc4991daaa994e31a519c13441b23ea409",
+      "signature": "fn scan_file (mut self , path : impl Into < PathBuf >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::scan_workspace_root",
+      "sig_hash": "80defc3360b402560cae698b14bb2eb5c4cd2d6f335d84335df80bae7cd454ba",
+      "signature": "fn scan_workspace_root (mut self , root : impl Into < PathBuf >) -> Result < Self , KleptoError >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::only_members",
+      "sig_hash": "08426daac704f08253a9f95d9e7d1604939ed4a49530c8d41fb9d24bcb6a0560",
+      "signature": "fn only_members (mut self , names : & [& str]) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::include_glob",
+      "sig_hash": "ad8b5fb16fb6503bec150e06bd1fe21cde97c8c33ea83fc298badcf016425f37",
+      "signature": "fn include_glob (mut self , pat : & str) -> Result < Self , KleptoError >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::exclude_glob",
+      "sig_hash": "29dcf233e1807952705291ef3d2a1a677316d13e78383724f6b56d1f6f81235d",
+      "signature": "fn exclude_glob (mut self , pat : & str) -> Result < Self , KleptoError >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::exclude_generated",
+      "sig_hash": "ecbe596023bf352997d59939fbc4dd9d29f3c08be593729597365fed943b23d7",
+      "signature": "fn exclude_generated (mut self) -> Result < Self , KleptoError >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::follow_links",
+      "sig_hash": "a726dd411cdecc66017331cb1278651492326eec48ffbda23a0322fc9f6d8460",
+      "signature": "fn follow_links (mut self , yes : bool) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::max_file_size",
+      "sig_hash": "1af3db128c2110862deb33fbdb9e6698dcb8db4ff69114009f504e0b15f6c15f",
+      "signature": "fn max_file_size (mut self , bytes : u64) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::ignore_parse_errors",
+      "sig_hash": "f9cf7e036a0bf70de0b2600daa0f829596572f7bebed0eb3d89f688314188ff0",
+      "signature": "fn ignore_parse_errors (mut self , yes : bool) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::only_newest",
+      "sig_hash": "c15d5b5293d33246f94841b2ffda4d46112d7992e90fcfc0eb15880d77524ea6",
+      "signature": "fn only_newest (mut self , n : usize) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::include_tests",
+      "sig_hash": "9e739de169f3edb7e117b16c92e0ad849e3e50e1f9b18f0a80fcd25adb48a157",
+      "signature": "fn include_tests (mut self , yes : bool) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::include_examples",
+      "sig_hash": "ef9b8e5d0f5c32f129105827953cc26e24fbc563fc35dbb96bd600d7d1b77dd3",
+      "signature": "fn include_examples (mut self , yes : bool) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::include_benches",
+      "sig_hash": "0c2a3d1d54fe339cedb0edbf316a50aee3aae3f234573a71fc5447e520cf7f37",
+      "signature": "fn include_benches (mut self , yes : bool) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoBuilder::parse",
+      "sig_hash": "2718905e33de9cf7a226acd420aabaa8d4b8243d9c9c60d670d7b7cc809e12ec",
+      "signature": "fn parse (self) -> Result < Klepto , KleptoError >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::push_if_match",
+      "sig_hash": "8f4fe1c631b840117b835cf1e980e61157517d7389436207f112a5f1028ed975",
+      "signature": "fn push_if_match (p : & Path , include : & GlobSet , exclude : & GlobSet , out : & mut Vec < (PathBuf , SystemTime) >)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::parse_one",
+      "sig_hash": "068fa14df4c30d4e724dab8a864ba28e92255fc6b1956791e99caa9b07045013",
+      "signature": "fn parse_one (path : & Path , modified : SystemTime , max_size : Option < u64 >) -> Result < Option < ParsedFile > , KleptoError >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::norm_crate_root",
+      "sig_hash": "133d06534609d210139df40a2d08678597e99f18593cc11dbab8028b99a7ae8d",
+      "signature": "fn norm_crate_root (s : & str) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::classify_imports",
+      "sig_hash": "c0bf84baf32ccdd8111ec9c442436e8b49bf139c0b9942da9e3fa752b5efb261",
+      "signature": "fn classify_imports (imports : & mut [crate :: model :: StolenPath] , workspace_members : & std :: collections :: HashSet < String > , dependency_crates : & std :: collections :: HashSet < String > ,)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/klepto.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::main_v1",
+      "sig_hash": "27849a16b232afcc86f0f51f0ae76a320a0cb8f4e73ba1ca6f65727e01df01f4",
+      "signature": "fn main_v1 () -> Result < () , Box < dyn std :: error :: Error > >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/main.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::main",
+      "sig_hash": "a6859ff331671e05f50d126ab295418166854a5154ffac3ca5b84247588d64ba",
+      "signature": "fn main () -> Result < () , Box < dyn std :: error :: Error > >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/main.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportVecExt::unique",
+      "sig_hash": "a75a6152e47edc3c9eb8ff3473de18fca00cca938d885dc9e8f2906e0143a79c",
+      "signature": "fn unique (self) -> Vec < StolenPath >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportVecExt::unique_prefer_pub_use",
+      "sig_hash": "ef882c6ef5c4ce1f48df3f95eb0ecbb268db40ff3d40638a83aeaf71f12c0807",
+      "signature": "fn unique_prefer_pub_use (self) -> Vec < StolenPath >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportVecExt::group_by_origin",
+      "sig_hash": "c01841b9c44cc97b42c7502ce0242a199a5ffbcc79039647287935321591e93c",
+      "signature": "fn group_by_origin (& self) -> BTreeMap < ImportOrigin , Vec < & StolenPath > >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportVecExt::group_by_origin_owned",
+      "sig_hash": "f1b66fefdacb348443477e29cbc268b21473bb9aa809b3f6db1075df64a00079",
+      "signature": "fn group_by_origin_owned (& self) -> BTreeMap < ImportOrigin , Vec < StolenPath > >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportVecExt::group_by_root",
+      "sig_hash": "28755b06f1d48efdbe5b946b6f336d79b57693aaff0e9e60dd5ec1b1a3bb54cf",
+      "signature": "fn group_by_root (& self) -> BTreeMap < String , Vec < & StolenPath > >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportVecExt::summary",
+      "sig_hash": "dd8691b84e6b639a86cb9131ff9d404e9b9d4cf28f2d6705c8ff0ec119956551",
+      "signature": "fn summary (& self) -> ImportSummary",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::origin_or_unknown",
+      "sig_hash": "f61eabd2f9506014b3b4c26aaf79418b9379e06bce9e12ff4e80d0bc8ee32a71",
+      "signature": "fn origin_or_unknown (i : & StolenPath) -> ImportOrigin",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::is_absolute",
+      "sig_hash": "02a2adce2e567bea37790e7e8da59f8a95eb608da5e9c61f2ae3fbae8a28bf7f",
+      "signature": "fn is_absolute (i : & StolenPath) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Vec::unique",
+      "sig_hash": "a75a6152e47edc3c9eb8ff3473de18fca00cca938d885dc9e8f2906e0143a79c",
+      "signature": "fn unique (self) -> Vec < StolenPath >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Vec::unique_prefer_pub_use",
+      "sig_hash": "ef882c6ef5c4ce1f48df3f95eb0ecbb268db40ff3d40638a83aeaf71f12c0807",
+      "signature": "fn unique_prefer_pub_use (self) -> Vec < StolenPath >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Vec::group_by_origin",
+      "sig_hash": "c01841b9c44cc97b42c7502ce0242a199a5ffbcc79039647287935321591e93c",
+      "signature": "fn group_by_origin (& self) -> BTreeMap < ImportOrigin , Vec < & StolenPath > >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Vec::group_by_origin_owned",
+      "sig_hash": "f1b66fefdacb348443477e29cbc268b21473bb9aa809b3f6db1075df64a00079",
+      "signature": "fn group_by_origin_owned (& self) -> BTreeMap < ImportOrigin , Vec < StolenPath > >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Vec::group_by_root",
+      "sig_hash": "28755b06f1d48efdbe5b946b6f336d79b57693aaff0e9e60dd5ec1b1a3bb54cf",
+      "signature": "fn group_by_root (& self) -> BTreeMap < String , Vec < & StolenPath > >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Vec::summary",
+      "sig_hash": "dd8691b84e6b639a86cb9131ff9d404e9b9d4cf28f2d6705c8ff0ec119956551",
+      "signature": "fn summary (& self) -> ImportSummary",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/imports_ext.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::CapturedFn::is_public",
+      "sig_hash": "408107f22ab87e29b2ff089d5a86f8d124e0432cc626da2d23bb42914f37a3a7",
+      "signature": "fn is_public (& self) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/model.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::CapturedFn::has_docs",
+      "sig_hash": "04277561bba0284a3a2e898d69128ea2f7a0ae574656f9d92b8449e0c3d01395",
+      "signature": "fn has_docs (& self) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/model.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoGlobSetBuilder::default",
+      "sig_hash": "4bbea10c9513824814a8ca03b02e7b31ab9379dad91094f4690919ec5254c75e",
+      "signature": "fn default () -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/model.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoGlobSetBuilder::deref",
+      "sig_hash": "89f1c67a168d0729b5aab47340dabdc2dba200e1aa2710cb658209354971bb0a",
+      "signature": "fn deref (& self) -> & Self :: Target",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/model.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::KleptoGlobSetBuilder::deref_mut",
+      "sig_hash": "78cad1320be5bfcfde69e3c10584c1d449deb38b15da7095f3205fa158786531",
+      "signature": "fn deref_mut (& mut self) -> & mut Self :: Target",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/model.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::new",
+      "sig_hash": "92f495352381102bd914c85b48f171f4c076537798ead885b21b8fbaac466aa6",
+      "signature": "fn new (k : & 'k Klepto) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::root",
+      "sig_hash": "2f5a6a34db6dadefc52ddde309332201e6b284fb832c5dd303eecf479163ac5e",
+      "signature": "fn root (mut self , r : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::internal_only",
+      "sig_hash": "90d6305662a90fab1e1286fd56d2f437672b37c74925060ee7227d073fa2a5a4",
+      "signature": "fn internal_only (mut self) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::public_use_only",
+      "sig_hash": "a7eda8c92322ccff6bff33695c36311e0f4218c3492efaf6dc3490bee0281331",
+      "signature": "fn public_use_only (mut self) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::full_path_starts_with",
+      "sig_hash": "9be98babb1cb071dc13a0dfe46c19972f292768c4243f85f58d3507dc85713e4",
+      "signature": "fn full_path_starts_with (mut self , p : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::filter",
+      "sig_hash": "dbabd1f0199b5f72a886b028062f51fbfc82d52365aab3188bee8324eea48e73",
+      "signature": "fn filter < F > (self , f : F) -> Vec < StolenPath > where F : Fn (& StolenPath) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::collect",
+      "sig_hash": "aa6c5b39c6b16e52478323f6ae57f2b9f386f6d0a6e95faef727570662d1f385",
+      "signature": "fn collect (self) -> Vec < StolenPath >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::origin",
+      "sig_hash": "e49f10fc3b0d08f4d93bf164b95c8185bf8242754ba020b23ceab97a34e478e3",
+      "signature": "fn origin (mut self , o : crate :: model :: ImportOrigin) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::workspace_only",
+      "sig_hash": "ec4591ddc412a5d47fb1c7906ace81aab6e21f7b76c6a3fdf8035d9ffccaaa4c",
+      "signature": "fn workspace_only (self) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::deps_only",
+      "sig_hash": "995d1310f59e307a66100dd00c12ac4459118301b42c5e97a53decfba13f6837",
+      "signature": "fn deps_only (self) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::ImportQuery::stdish_only",
+      "sig_hash": "9bc0ef4f391b441058d088bac345aaaa506fedba19185aee67d821515293c48b",
+      "signature": "fn stdish_only (mut self) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::new",
+      "sig_hash": "92f495352381102bd914c85b48f171f4c076537798ead885b21b8fbaac466aa6",
+      "signature": "fn new (k : & 'k Klepto) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::public_only",
+      "sig_hash": "8f74b2ca7c6e877801732733d02808d4df40fbb07ac90e2c6bfb8ee2af38001d",
+      "signature": "fn public_only (mut self) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::no_docs",
+      "sig_hash": "42fb94dd5cabaecb2970b32a98104d34b1951df0040eda83711bead46ca0f2a4",
+      "signature": "fn no_docs (mut self) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::in_impl",
+      "sig_hash": "41dbe061cdc4091fb34f602453362afb42d437c734a2813f9cff4eb31334f341",
+      "signature": "fn in_impl (mut self , ty : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::impls_trait",
+      "sig_hash": "9bd550f91e0294caa05367033840a80bfd68b8ddb3bd28fcd9224b7be4e698e9",
+      "signature": "fn impls_trait (mut self , tr : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::in_trait",
+      "sig_hash": "1a8c11365a534e306cc3744560c0134cf3c188b40d8ec239304d131937d626b9",
+      "signature": "fn in_trait (mut self , tr : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::named",
+      "sig_hash": "0292c21a15daa4dd614d256d2657c659220d68e267ed6c546e4b1b0bd90c44b8",
+      "signature": "fn named (mut self , n : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::name_contains",
+      "sig_hash": "2f2ba819925f9e95546cee149fc12bf1ea4c8834d6108974046330bea28d63f5",
+      "signature": "fn name_contains (mut self , s : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::name_matches",
+      "sig_hash": "48bd934deec966077d6d475b85994b64aecded0767e034e274f89024dae29e6f",
+      "signature": "fn name_matches (mut self , re : & str) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::returns",
+      "sig_hash": "1e3369ea75dba04c3c2ff5ab3d80d5a53aad512d474e978ef68015d261abc91a",
+      "signature": "fn returns (mut self , s : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::takes_arg",
+      "sig_hash": "5c06eab69b73e8a991303568a558480e399c808175b3eb6094cc21b026b1654c",
+      "signature": "fn takes_arg (mut self , s : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::is_async",
+      "sig_hash": "d5b229b5fb5044396d4bd65d3fbf92a8cf519be5e52559d2a4727ee9e7351dad",
+      "signature": "fn is_async (mut self , yes : bool) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::is_unsafe",
+      "sig_hash": "4cbb92b8c1c8ff8e3ed54a68dfc697bb36ebaf2e9f9cc63b5dcf7d5ce7a2280d",
+      "signature": "fn is_unsafe (mut self , yes : bool) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::is_const",
+      "sig_hash": "03fe8fc63e42c5576f6226e984498288a34895f7589480847f5d9f31080981a4",
+      "signature": "fn is_const (mut self , yes : bool) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::is_generic",
+      "sig_hash": "8fed61df1d11a876261944de0c4e73f498ab27b131ee3c7f257f01bc8102cbeb",
+      "signature": "fn is_generic (mut self , yes : bool) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::has_attr",
+      "sig_hash": "da018e1e58e684481286e52f0489a0cfd06e3e59a7ef024448fae78aaeb4bed7",
+      "signature": "fn has_attr (mut self , a : impl Into < String >) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::filter",
+      "sig_hash": "d4ee5555f4b075c3d5a9482101b987fc27a472e057f130eb00ee63241fa931d2",
+      "signature": "fn filter < F > (self , f : F) -> Vec < CapturedFn > where F : Fn (& CapturedFn) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnQuery::collect",
+      "sig_hash": "68263669096ec6f59ab8fbb8f99b82d9e52af787e0a2ea4a1d8d425311d82d27",
+      "signature": "fn collect (self) -> Vec < CapturedFn >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/query.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::span_to_location",
+      "sig_hash": "4f6ec34d8f06536515ecd9948c6a4e72df4d29fe3ba3bf61fc51be133d4afd5e",
+      "signature": "fn span_to_location (path : & std :: path :: Path , span : Span) -> FileLocation",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::vis_is_public",
+      "sig_hash": "3b553dda225838ecc47698cceb2143fcdc45d402a10661ac5e94a2cb5cb8f586",
+      "signature": "fn vis_is_public (vis : & Visibility) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::has_docs",
+      "sig_hash": "82ffcf8854321f990bc9524161364dd5a0c5dc35d1b703645e5abd7f62f0fce7",
+      "signature": "fn has_docs (attrs : & [Attribute]) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::attr_paths",
+      "sig_hash": "dadedf44b268a1d822ae7e3710cf27e9cedab4fe3b63c5ca11db670162bad6fa",
+      "signature": "fn attr_paths (attrs : & [Attribute]) -> Vec < String >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::path_to_string",
+      "sig_hash": "6cc839e8fc32f864df5643b547eef333a373413ca6fc378694e973b76c59197e",
+      "signature": "fn path_to_string (p : & syn :: Path) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::type_to_string",
+      "sig_hash": "d927d943dbf7c57affb67ec854a2048ce61b9aad9ea48ab947044899bb9dbc24",
+      "signature": "fn type_to_string (t : & syn :: Type) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::fn_args",
+      "sig_hash": "6ab50b4eb9978c973fae88f167a01e191b1fc1e70c371c4697ac64b1397f0596",
+      "signature": "fn fn_args (sig : & syn :: Signature) -> Vec < String >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::fn_return",
+      "sig_hash": "6856ac11ea990aa01fbd2529016277d8ff6af9f10cf78db28993298aa3a94b88",
+      "signature": "fn fn_return (sig : & syn :: Signature) -> Option < String >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::fq_name",
+      "sig_hash": "a30a2a47f5d39a24a7f36b0425aa0623425863046dabb422fe7fa1db8b8cca90",
+      "signature": "fn fq_name (crate_name : & str , module_path : & [String] , kind : & FnKind , name : & str) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::crate_is_no_std",
+      "sig_hash": "3ca0167ec49e6a4f085bdd5b397b7ef9db2e58c63c0f14d7a0af2836c6be32c9",
+      "signature": "fn crate_is_no_std (ast : & File) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::extract_public_surface",
+      "sig_hash": "2aa7f714a3d08fef95993c5e561f533c203393e320801c08627fefa0fb2d76d9",
+      "signature": "fn extract_public_surface (file_path : & std :: path :: Path , ast : & File) -> Vec < ExportedSymbol >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::extract_imports_v1",
+      "sig_hash": "61d75cef4d6726e7488eab8ac98cb8d8240c7e607f4cc0bee6f8e44aa136e0c4",
+      "signature": "fn extract_imports_v1 (file_path : & std :: path :: Path , ast : & File) -> Vec < StolenPathV1 >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::extract_imports",
+      "sig_hash": "011ff0c558a7000cd5a7fe7dbde3cd207baf868d051a1ffadb22d05d85c41b88",
+      "signature": "fn extract_imports (file_path : & std :: path :: Path , ast : & syn :: File) -> Vec < crate :: model :: StolenPath >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::extract_functions",
+      "sig_hash": "fc48e8bca958ea8c64b3d386d8062ba48f2b9f8b880bef8c38a0aeefdbbaf371",
+      "signature": "fn extract_functions (crate_name : & str , file_path : & std :: path :: Path , ast : & File) -> Vec < CapturedFn >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::extract_occurrences_v1",
+      "sig_hash": "e0fd85f0bda0a8c9ddce3b4a9bcc9b4dab7563073c17c7ed53df66b0200c1608",
+      "signature": "fn extract_occurrences_v1 (file_path : & std :: path :: Path , ast : & File) -> (Vec < MacroDef > , Vec < MacroInvocationV1 > , Vec < PathOccurrenceV1 > , Vec < CallOccurrenceV1 >)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::extract_occurrences",
+      "sig_hash": "011eada75d246c27ead2a48d34fb160edc43f1252db62a752dadb0031b4d8828",
+      "signature": "fn extract_occurrences (crate_name : & str , file_path : & std :: path :: Path , ast : & syn :: File ,) -> (Vec < MacroDef > , Vec < MacroInvocation > , Vec < PathOccurrence > , Vec < CallOccurrence >)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/extract.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::UndocumentedPublicApi::code",
+      "sig_hash": "b2ebb5c25681849ce50a923cb81cac9009d45ad518f253fb8bf9b80857ae75fc",
+      "signature": "fn code (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::UndocumentedPublicApi::name",
+      "sig_hash": "43b7db6957c7f3d75704239c691c7f4a775c8378cc3e0c1d2abda2edf16b5250",
+      "signature": "fn name (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::UndocumentedPublicApi::run",
+      "sig_hash": "1b62d6330f2169a7f707c21039dc23bc79c4db46f764dd44c7de3ce856a1e56c",
+      "signature": "fn run (& self , k : & Klepto) -> Vec < Finding >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::UnwrapInPublicApi::code",
+      "sig_hash": "b2ebb5c25681849ce50a923cb81cac9009d45ad518f253fb8bf9b80857ae75fc",
+      "signature": "fn code (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::UnwrapInPublicApi::name",
+      "sig_hash": "43b7db6957c7f3d75704239c691c7f4a775c8378cc3e0c1d2abda2edf16b5250",
+      "signature": "fn name (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::UnwrapInPublicApi::run",
+      "sig_hash": "1b62d6330f2169a7f707c21039dc23bc79c4db46f764dd44c7de3ce856a1e56c",
+      "signature": "fn run (& self , k : & Klepto) -> Vec < Finding >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::PanicMacrosInPublicApi::code",
+      "sig_hash": "b2ebb5c25681849ce50a923cb81cac9009d45ad518f253fb8bf9b80857ae75fc",
+      "signature": "fn code (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::PanicMacrosInPublicApi::name",
+      "sig_hash": "43b7db6957c7f3d75704239c691c7f4a775c8378cc3e0c1d2abda2edf16b5250",
+      "signature": "fn name (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::PanicMacrosInPublicApi::run",
+      "sig_hash": "1b62d6330f2169a7f707c21039dc23bc79c4db46f764dd44c7de3ce856a1e56c",
+      "signature": "fn run (& self , k : & Klepto) -> Vec < Finding >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::StdInNoStdCrate::code",
+      "sig_hash": "b2ebb5c25681849ce50a923cb81cac9009d45ad518f253fb8bf9b80857ae75fc",
+      "signature": "fn code (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::StdInNoStdCrate::name",
+      "sig_hash": "43b7db6957c7f3d75704239c691c7f4a775c8378cc3e0c1d2abda2edf16b5250",
+      "signature": "fn name (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::StdInNoStdCrate::run",
+      "sig_hash": "1b62d6330f2169a7f707c21039dc23bc79c4db46f764dd44c7de3ce856a1e56c",
+      "signature": "fn run (& self , k : & Klepto) -> Vec < Finding >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/builtin.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::FnSpan::contains",
+      "sig_hash": "6756b8990417a4928b70dd83e2422f27d06f179d920835dc4d802047e13ee8a2",
+      "signature": "fn contains (& self , loc : & FileLocation) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::EnclosingIndex::build",
+      "sig_hash": "4968b7276375519613bc8506163997dbf3d2861288fb4c6f033c434894c4073f",
+      "signature": "fn build (crate_name : & str , file_path : & std :: path :: Path , ast : & syn :: File) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::EnclosingIndex::merge",
+      "sig_hash": "605901c5a45f3472514033784c00d388947ec8bb1e3bcd87fffb1fe001bf4241",
+      "signature": "fn merge (mut self , other : EnclosingIndex) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::EnclosingIndex::enclosing",
+      "sig_hash": "b13b6a9bf60e2f4cc6e60a470756472cb03dcf302083f7ffb8dba3425a709f26",
+      "signature": "fn enclosing < 'a > (& 'a self , loc : & FileLocation) -> Option < & 'a FnSpan >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::span_start_end",
+      "sig_hash": "71872ad462b03386dc5bb6b36916f2e27985a6a199aa003c58cf109178d7650d",
+      "signature": "fn span_start_end (span : Span) -> (Option < (u32 , u32) > , Option < (u32 , u32) >)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::vis_is_public",
+      "sig_hash": "216f7d7f85944aec32c66fbf388102ff45f3f3bba3b5b7d485f0eea7fe84efb4",
+      "signature": "fn vis_is_public (vis : & syn :: Visibility) -> bool",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::path_to_string",
+      "sig_hash": "6cc839e8fc32f864df5643b547eef333a373413ca6fc378694e973b76c59197e",
+      "signature": "fn path_to_string (p : & syn :: Path) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::type_to_string",
+      "sig_hash": "6fc839d707c36c4676b7aa459c776d22a10d3a6e4f41906f36da1312f85aa3e8",
+      "signature": "fn type_to_string (ty : & syn :: Type) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::fq_name",
+      "sig_hash": "a30a2a47f5d39a24a7f36b0425aa0623425863046dabb422fe7fa1db8b8cca90",
+      "signature": "fn fq_name (crate_name : & str , module_path : & [String] , kind : & FnKind , name : & str) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Builder::visit_item_mod",
+      "sig_hash": "71c54b425c3adf2c11fd339ebf77a4858089dd48a0fcc9a906e16b47f13a53d5",
+      "signature": "fn visit_item_mod (& mut self , i : & 'ast syn :: ItemMod)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Builder::visit_item_trait",
+      "sig_hash": "eab6e5aceaae7b2a7e1658fe48d5b82bccb75cc9426cbfc5848e27d738760240",
+      "signature": "fn visit_item_trait (& mut self , i : & 'ast syn :: ItemTrait)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Builder::visit_item_impl",
+      "sig_hash": "b0e03585afd916952935d7c4ad6b5b8c5a1333eb6879737a62fa210eae626856",
+      "signature": "fn visit_item_impl (& mut self , i : & 'ast syn :: ItemImpl)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Builder::visit_item_fn",
+      "sig_hash": "f6607e4f554970c1cc941a96b2a6a339f46422e49a0876a02b5a62e578589d50",
+      "signature": "fn visit_item_fn (& mut self , i : & 'ast syn :: ItemFn)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Builder::visit_impl_item_fn",
+      "sig_hash": "35821dd00f788fca3ad8ba6330a626d14ed64289b48189ec42d56b73796e2533",
+      "signature": "fn visit_impl_item_fn (& mut self , i : & 'ast syn :: ImplItemFn)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Builder::visit_trait_item_fn",
+      "sig_hash": "fa20a15e5b24d15bd74bd808ad3b11aa3e531e6732f797dacd6227f49bb7de49",
+      "signature": "fn visit_trait_item_fn (& mut self , i : & 'ast syn :: TraitItemFn)",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/index.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Rule::code",
+      "sig_hash": "b2ebb5c25681849ce50a923cb81cac9009d45ad518f253fb8bf9b80857ae75fc",
+      "signature": "fn code (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/mod.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Rule::name",
+      "sig_hash": "43b7db6957c7f3d75704239c691c7f4a775c8378cc3e0c1d2abda2edf16b5250",
+      "signature": "fn name (& self) -> & 'static str",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/mod.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Rule::run",
+      "sig_hash": "1b62d6330f2169a7f707c21039dc23bc79c4db46f764dd44c7de3ce856a1e56c",
+      "signature": "fn run (& self , k : & Klepto) -> Vec < Finding >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/mod.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::RuleRunner::new",
+      "sig_hash": "92f495352381102bd914c85b48f171f4c076537798ead885b21b8fbaac466aa6",
+      "signature": "fn new (k : & 'k Klepto) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/mod.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::RuleRunner::with_default_rules",
+      "sig_hash": "9a6a1147d76032322b9d4250da541b1cb2a645cfd306fa0e379c9aaa55e81fe9",
+      "signature": "fn with_default_rules (mut self) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/mod.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::RuleRunner::add_rule",
+      "sig_hash": "ed702dd83728564a3b5e276bd2590270f98611efab9d09893e5bafa64a768f37",
+      "signature": "fn add_rule < R : Rule + 'static > (mut self , r : R) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/mod.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::RuleRunner::run",
+      "sig_hash": "caf128f22529162e41dcac195a1ff7513f64a7915df441a88f742675fc51185d",
+      "signature": "fn run (self) -> Vec < Finding >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/rules/mod.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::findings_to_json",
+      "sig_hash": "22e5183a0b32fb9ba228c6092fd2139d576e77d2f83d33f62187c136d4294059",
+      "signature": "fn findings_to_json (findings : & [Finding]) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/report.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::findings_to_markdown",
+      "sig_hash": "0f1674c235ab1c42b9ea8ce09e4266f86eb15fec053520f28e8c9a3df5d4f10d",
+      "signature": "fn findings_to_markdown (findings : & [Finding]) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/report.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::findings_to_table",
+      "sig_hash": "9e1f6f93e1b7d665de98735a0acabf285a5d079a0a3933a7ff5df29a3c9ab75d",
+      "signature": "fn findings_to_table (findings : & [Finding]) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/report.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::truncate",
+      "sig_hash": "497dbb20060915bb27505c97d5399fc6e20909d5a15ebb67468384af3ef3564c",
+      "signature": "fn truncate (s : & str , max : usize) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/report.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::hash_sig",
+      "sig_hash": "88cf98cf8eb47aac9e239b5d6a43c1b90b5b10805331fca35b12f7906d7eabfc",
+      "signature": "fn hash_sig (s : & str) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/snapshot.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Snapshot::from_klepto",
+      "sig_hash": "b696ba77f815e90a54ddb7c2326fd915d7c503d16b0d45284249af44eb4a271a",
+      "signature": "fn from_klepto (k : & Klepto) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/snapshot.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Snapshot::to_json_string",
+      "sig_hash": "820e7f074e20e4096d3978d0c18f548b10a229a5ff5ce6f4697b1a5b50e887a2",
+      "signature": "fn to_json_string (& self) -> String",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/snapshot.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Snapshot::diff",
+      "sig_hash": "2419aed9292bab854a46729d7cf68526e0628de523767174fb79a54097e76634",
+      "signature": "fn diff (& self , old : & Snapshot) -> SnapshotDiff",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/snapshot.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Finder::new",
+      "sig_hash": "92f495352381102bd914c85b48f171f4c076537798ead885b21b8fbaac466aa6",
+      "signature": "fn new (k : & 'k Klepto) -> Self",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/find.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Finder::paths_eq",
+      "sig_hash": "3c955c2cc039db99af482fc83435b279007d7d0c0d172ead8d9b1fcecec4a971",
+      "signature": "fn paths_eq (& self , p : & str) -> Vec < PathOccurrence >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/find.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Finder::macros",
+      "sig_hash": "c297a4bf8e94b653a5df0232b4d2fc0cb24f60b629a2eadad81d6e28af6ca10d",
+      "signature": "fn macros (& self , name : & str) -> Vec < MacroInvocation >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/find.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Finder::calls_containing",
+      "sig_hash": "d7567489c54fe7965738eec2bd298d93d3180cb373b3854738e5aa0e1aae43e5",
+      "signature": "fn calls_containing (& self , s : & str) -> Vec < CallOccurrence >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/find.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Finder::unwrap_calls",
+      "sig_hash": "6745abacc0939b56c925c247043610f1425736551c3c6b6aba3d0f8849154a82",
+      "signature": "fn unwrap_calls (& self) -> Vec < CallOccurrence >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/find.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "fq_name": "crate::Finder::expect_calls",
+      "sig_hash": "cb6c1c4921bcd43c068b9272a5784ebe26e7af9371a9d4487e07b960cbbf6d97",
+      "signature": "fn expect_calls (& self) -> Vec < CallOccurrence >",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/find.rs",
+        "line": null,
+        "column": null
+      }
+    }
+  ],
+  "exports": [
+    {
+      "exported_as": "ImportSummary",
+      "source_path": "crate::imports_ext::ImportSummary",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "ImportVecExt",
+      "source_path": "crate::imports_ext::ImportVecExt",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "EnclosingIndex",
+      "source_path": "crate::index::EnclosingIndex",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "FnSpan",
+      "source_path": "crate::index::FnSpan",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "Klepto",
+      "source_path": "crate::klepto::Klepto",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "KleptoBuilder",
+      "source_path": "crate::klepto::KleptoBuilder",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "KleptoError",
+      "source_path": "crate::klepto::KleptoError",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "*",
+      "source_path": "crate::model::*",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "*",
+      "source_path": "crate::query::*",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "*",
+      "source_path": "crate::find::*",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "*",
+      "source_path": "crate::snapshot::*",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "*",
+      "source_path": "crate::report::*",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    },
+    {
+      "exported_as": "*",
+      "source_path": "crate::rules::*",
+      "location": {
+        "path": "/Users/jameshunt/James/Code/packages/crates/klepto/src/lib.rs",
+        "line": null,
+        "column": null
+      }
+    }
+  ],
+  "imports": [
+    "blake3::Hasher",
+    "cargo_metadata::MetadataCommand",
+    "crate::extract::*",
+    "crate::find::*",
+    "crate::imports_ext::ImportSummary",
+    "crate::imports_ext::ImportVecExt",
+    "crate::index::EnclosingIndex",
+    "crate::index::FnSpan",
+    "crate::klepto::Klepto",
+    "crate::klepto::KleptoBuilder",
+    "crate::klepto::KleptoError",
+    "crate::model::*",
+    "crate::model::FileLocation",
+    "crate::model::FnKind",
+    "crate::model::ImportOrigin",
+    "crate::model::StolenPath",
+    "crate::model::UseKind",
+    "crate::query::*",
+    "crate::report::*",
+    "crate::rules::*",
+    "crate::rules::Rule",
+    "crate::snapshot::*",
+    "globset::Glob",
+    "globset::GlobSet",
+    "globset::GlobSetBuilder",
+    "klepto::Klepto",
+    "klepto::findings_to_table",
+    "proc_macro2::Span",
+    "quote::ToTokens",
+    "regex::Regex",
+    "serde::Deserialize",
+    "serde::Serialize",
+    "serde_json::json",
+    "std::collections::BTreeMap",
+    "std::collections::BTreeSet",
+    "std::collections::HashMap",
+    "std::collections::HashSet",
+    "std::path::Path",
+    "std::path::PathBuf",
+    "std::time::SystemTime",
+    "syn::Attribute",
+    "syn::File",
+    "syn::Item",
+    "syn::Visibility",
+    "syn::spanned::Spanned",
+    "syn::visit::Visit",
+    "thiserror::Error",
+    "walkdir::WalkDir"
+  ]
+}
