@@ -8,7 +8,7 @@ pub mod report;
 pub mod rules;
 pub mod index;
 pub mod imports_ext;
-
+pub mod use_sites;
 pub use crate::imports_ext::{ImportSummary, ImportVecExt};
 
 pub use crate::index::{EnclosingIndex, FnSpan};

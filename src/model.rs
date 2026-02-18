@@ -70,6 +70,8 @@ pub struct StolenPathV1 {
 pub struct StolenPath {
     pub root: String,
     pub segments: Vec<String>,
+
+    pub module_path: Vec<String>,
     pub is_internal: bool,
     pub is_public_use: bool,
     pub kind: UseKind,
@@ -107,6 +109,8 @@ pub struct MacroInvocationV1 {
 pub struct MacroInvocation {
     pub name: String,
     pub module_path: Vec<String>,
+        #[serde(default)]
+    pub path: Option<String>,
     pub location: FileLocation,
     #[serde(default)]
     pub enclosing_fn: Option<String>,

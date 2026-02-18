@@ -1,7 +1,7 @@
 use crate::model::*;
 use proc_macro2::Span;
 use quote::ToTokens;
-use syn::{spanned::Spanned, visit::Visit, Attribute, File, Item, Visibility};
+use syn::{Attribute, File, Item, Visibility, spanned::Spanned, visit::Visit};
 
 fn span_to_location(path: &std::path::Path, span: Span) -> FileLocation {
     #[cfg(feature = "span-locations")]
@@ -16,7 +16,11 @@ fn span_to_location(path: &std::path::Path, span: Span) -> FileLocation {
     #[cfg(not(feature = "span-locations"))]
     {
         let _ = span;
-        FileLocation { path: path.to_path_buf(), line: None, column: None }
+        FileLocation {
+            path: path.to_path_buf(),
+            line: None,
+            column: None,
+        }
     }
 }
 
@@ -29,13 +33,25 @@ fn has_docs(attrs: &[Attribute]) -> bool {
 }
 
 fn attr_paths(attrs: &[Attribute]) -> Vec<String> {
-    attrs.iter()
-        .map(|a| a.path().segments.iter().map(|s| s.ident.to_string()).collect::<Vec<_>>().join("::"))
+    attrs
+        .iter()
+        .map(|a| {
+            a.path()
+                .segments
+                .iter()
+                .map(|s| s.ident.to_string())
+                .collect::<Vec<_>>()
+                .join("::")
+        })
         .collect()
 }
 
 fn path_to_string(p: &syn::Path) -> String {
-    p.segments.iter().map(|s| s.ident.to_string()).collect::<Vec<_>>().join("::")
+    p.segments
+        .iter()
+        .map(|s| s.ident.to_string())
+        .collect::<Vec<_>>()
+        .join("::")
 }
 
 fn type_to_string(t: &syn::Type) -> String {
@@ -43,7 +59,10 @@ fn type_to_string(t: &syn::Type) -> String {
 }
 
 fn fn_args(sig: &syn::Signature) -> Vec<String> {
-    sig.inputs.iter().map(|i| i.to_token_stream().to_string()).collect()
+    sig.inputs
+        .iter()
+        .map(|i| i.to_token_stream().to_string())
+        .collect()
 }
 
 fn fn_return(sig: &syn::Signature) -> Option<String> {
@@ -176,10 +195,16 @@ pub fn extract_imports_v1(file_path: &std::path::Path, ast: &File) -> Vec<Stolen
         span: Span,
         out: &mut Vec<StolenPathV1>,
     ) {
-        if segs.is_empty() { return; }
+        if segs.is_empty() {
+            return;
+        }
         let root = segs.remove(0);
         let is_internal = matches!(root.as_str(), "crate" | "self" | "super");
-        let full_path = if segs.is_empty() { root.clone() } else { format!("{}::{}", root, segs.join("::")) };
+        let full_path = if segs.is_empty() {
+            root.clone()
+        } else {
+            format!("{}::{}", root, segs.join("::"))
+        };
         out.push(StolenPathV1 {
             root,
             segments: segs,
@@ -215,7 +240,14 @@ pub fn extract_imports_v1(file_path: &std::path::Path, ast: &File) -> Vec<Stolen
             }
             syn::UseTree::Glob(g) => {
                 prefix.push("*".to_string());
-                emit(file_path, prefix, is_public_use, UseKind::Glob, g.span(), out);
+                emit(
+                    file_path,
+                    prefix,
+                    is_public_use,
+                    UseKind::Glob,
+                    g.span(),
+                    out,
+                );
             }
             syn::UseTree::Rename(r) => {
                 prefix.push(r.ident.to_string());
@@ -223,7 +255,9 @@ pub fn extract_imports_v1(file_path: &std::path::Path, ast: &File) -> Vec<Stolen
                     file_path,
                     prefix,
                     is_public_use,
-                    UseKind::Rename { alias: r.rename.to_string() },
+                    UseKind::Rename {
+                        alias: r.rename.to_string(),
+                    },
                     r.span(),
                     out,
                 );
@@ -241,7 +275,10 @@ pub fn extract_imports_v1(file_path: &std::path::Path, ast: &File) -> Vec<Stolen
 
     out
 }
-pub fn extract_imports(file_path: &std::path::Path, ast: &syn::File) -> Vec<crate::model::StolenPath> {
+pub fn extract_imports(
+    file_path: &std::path::Path,
+    ast: &syn::File,
+) -> Vec<crate::model::StolenPath> {
     use crate::model::{FileLocation, StolenPath, UseKind};
 
     fn span_to_location(path: &std::path::Path, span: proc_macro2::Span) -> FileLocation {
@@ -257,12 +294,17 @@ pub fn extract_imports(file_path: &std::path::Path, ast: &syn::File) -> Vec<crat
         #[cfg(not(feature = "span-locations"))]
         {
             let _ = span;
-            FileLocation { path: path.to_path_buf(), line: None, column: None }
+            FileLocation {
+                path: path.to_path_buf(),
+                line: None,
+                column: None,
+            }
         }
     }
 
     fn emit(
         file_path: &std::path::Path,
+        module_path: &[String],
         mut segs: Vec<String>,
         is_public_use: bool,
         is_absolute: bool,
@@ -292,35 +334,55 @@ pub fn extract_imports(file_path: &std::path::Path, ast: &syn::File) -> Vec<crat
         out.push(StolenPath {
             root,
             segments: segs,
+            module_path: module_path.to_vec(),
             is_internal,
             is_public_use,
             kind,
             full_path,
             location: span_to_location(file_path, span),
-            origin: None,                  // classified later in KleptoBuilder::parse()
+            origin: None,                   // classified later in KleptoBuilder::parse()
             is_absolute: Some(is_absolute), // tracked here
         });
     }
 
     fn walk_tree(
         file_path: &std::path::Path,
+        module_path: &[String],
         tree: &syn::UseTree,
         prefix: Vec<String>,
         is_public_use: bool,
         is_absolute: bool,
-        span: proc_macro2::Span,
+        // span: proc_macro2::Span,
         out: &mut Vec<StolenPath>,
     ) {
         match tree {
             syn::UseTree::Path(p) => {
                 let mut next = prefix;
                 next.push(p.ident.to_string());
-                walk_tree(file_path, &p.tree, next, is_public_use, is_absolute, p.span(), out);
+                walk_tree(
+                    file_path,
+                    module_path,
+                    &p.tree,
+                    next,
+                    is_public_use,
+                    is_absolute,
+                    // p.span(),
+                    out,
+                );
             }
 
             syn::UseTree::Group(g) => {
                 for t in &g.items {
-                    walk_tree(file_path, t, prefix.clone(), is_public_use, is_absolute, t.span(), out);
+                    walk_tree(
+                        file_path,
+                        module_path,
+                        t,
+                        prefix.clone(),
+                        is_public_use,
+                        is_absolute,
+                        // t.span(),
+                        out,
+                    );
                 }
             }
 
@@ -329,6 +391,7 @@ pub fn extract_imports(file_path: &std::path::Path, ast: &syn::File) -> Vec<crat
                 if n.ident == "self" {
                     emit(
                         file_path,
+                        module_path,
                         prefix,
                         is_public_use,
                         is_absolute,
@@ -341,6 +404,7 @@ pub fn extract_imports(file_path: &std::path::Path, ast: &syn::File) -> Vec<crat
                     segs.push(n.ident.to_string());
                     emit(
                         file_path,
+                        module_path,
                         segs,
                         is_public_use,
                         is_absolute,
@@ -356,6 +420,7 @@ pub fn extract_imports(file_path: &std::path::Path, ast: &syn::File) -> Vec<crat
                 segs.push("*".to_string());
                 emit(
                     file_path,
+                    module_path,
                     segs,
                     is_public_use,
                     is_absolute,
@@ -370,10 +435,13 @@ pub fn extract_imports(file_path: &std::path::Path, ast: &syn::File) -> Vec<crat
                 segs.push(r.ident.to_string());
                 emit(
                     file_path,
+                    module_path,
                     segs,
                     is_public_use,
                     is_absolute,
-                    UseKind::Rename { alias: r.rename.to_string() },
+                    UseKind::Rename {
+                        alias: r.rename.to_string(),
+                    },
                     r.span(),
                     out,
                 );
@@ -383,28 +451,62 @@ pub fn extract_imports(file_path: &std::path::Path, ast: &syn::File) -> Vec<crat
         }
     }
 
-    let mut out = Vec::new();
-
-    for item in &ast.items {
-        if let syn::Item::Use(u) = item {
-            let is_pub = matches!(u.vis, syn::Visibility::Public(_));
-            let is_absolute = u.leading_colon.is_some();
-            walk_tree(
-                file_path,
-                &u.tree,
-                Vec::new(),
-                is_pub,
-                is_absolute,
-                u.span(),
-                &mut out,
-            );
+    fn walk_items(
+        file_path: &std::path::Path,
+        items: &[Item],
+        mod_stack: &mut Vec<String>,
+        out: &mut Vec<StolenPath>,
+    ) {
+        for item in items {
+            match item {
+                Item::Use(u) => {
+                    let is_pub = matches!(u.vis, Visibility::Public(_));
+                    let is_abs = u.leading_colon.is_some();
+                    walk_tree(file_path, mod_stack, &u.tree, Vec::new(), is_pub, is_abs, out);
+                }
+                Item::Mod(m) => {
+                    if let Some((_, inner)) = &m.content {
+                        mod_stack.push(m.ident.to_string());
+                        walk_items(file_path, inner, mod_stack, out);
+                        mod_stack.pop();
+                    }
+                }
+                _ => {}
+            }
         }
     }
+
+    let mut out = Vec::new();
+    let mut mod_stack = Vec::new();
+    walk_items(file_path, &ast.items, &mut mod_stack, &mut out);
+//     let mut out = Vec::new();
+// 
+//     for item in &ast.items {
+//         if let syn::Item::Use(u) = item {
+//             let is_pub = matches!(u.vis, syn::Visibility::Public(_));
+//             let is_absolute = u.leading_colon.is_some();
+//             let empty_module_path: Vec<String> = Vec::new();
+//             walk_tree(
+//                 file_path,
+//                 &empty_module_path,
+//                 &u.tree,
+//                 Vec::new(),
+//                 is_pub,
+//                 is_absolute,
+//                 u.span(),
+//                 &mut out,
+//             );
+//         }
+//     }
 
     out
 }
 
-pub fn extract_functions(crate_name: &str, file_path: &std::path::Path, ast: &File) -> Vec<CapturedFn> {
+pub fn extract_functions(
+    crate_name: &str,
+    file_path: &std::path::Path,
+    ast: &File,
+) -> Vec<CapturedFn> {
     let mut out = Vec::new();
     let mut mod_stack: Vec<String> = Vec::new();
 
@@ -445,14 +547,22 @@ pub fn extract_functions(crate_name: &str, file_path: &std::path::Path, ast: &Fi
                 }
                 Item::Impl(imp) => {
                     let self_ty = match &*imp.self_ty {
-                        syn::Type::Path(tp) => tp.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_else(|| type_to_string(&imp.self_ty)),
+                        syn::Type::Path(tp) => tp
+                            .path
+                            .segments
+                            .last()
+                            .map(|s| s.ident.to_string())
+                            .unwrap_or_else(|| type_to_string(&imp.self_ty)),
                         _ => type_to_string(&imp.self_ty),
                     };
                     let trait_ty = imp.trait_.as_ref().map(|(_, path, _)| path_to_string(path));
 
                     for it in &imp.items {
                         if let syn::ImplItem::Fn(m) = it {
-                            let kind = FnKind::ImplMethod { self_ty: self_ty.clone(), trait_ty: trait_ty.clone() };
+                            let kind = FnKind::ImplMethod {
+                                self_ty: self_ty.clone(),
+                                trait_ty: trait_ty.clone(),
+                            };
                             let name = m.sig.ident.to_string();
                             let fq = super::extract::fq_name(crate_name, mod_stack, &kind, &name);
 
@@ -483,7 +593,9 @@ pub fn extract_functions(crate_name: &str, file_path: &std::path::Path, ast: &Fi
                     let trait_name = t.ident.to_string();
                     for it in &t.items {
                         if let syn::TraitItem::Fn(tf) = it {
-                            let kind = FnKind::TraitMethod { trait_name: trait_name.clone() };
+                            let kind = FnKind::TraitMethod {
+                                trait_name: trait_name.clone(),
+                            };
                             let name = tf.sig.ident.to_string();
                             let fq = super::extract::fq_name(crate_name, mod_stack, &kind, &name);
 
@@ -528,7 +640,15 @@ pub fn extract_functions(crate_name: &str, file_path: &std::path::Path, ast: &Fi
 
 /// Token-level macro and call / path occurrences.
 /// (This is what powers finders + rules.)
-pub fn extract_occurrences_v1(file_path: &std::path::Path, ast: &File) -> (Vec<MacroDef>, Vec<MacroInvocationV1>, Vec<PathOccurrenceV1>, Vec<CallOccurrenceV1>) {
+pub fn extract_occurrences_v1(
+    file_path: &std::path::Path,
+    ast: &File,
+) -> (
+    Vec<MacroDef>,
+    Vec<MacroInvocationV1>,
+    Vec<PathOccurrenceV1>,
+    Vec<CallOccurrenceV1>,
+) {
     #[derive(Default)]
     struct V {
         mod_stack: Vec<String>,
@@ -543,14 +663,20 @@ pub fn extract_occurrences_v1(file_path: &std::path::Path, ast: &File) -> (Vec<M
         fn visit_item_mod(&mut self, i: &'ast syn::ItemMod) {
             if let Some((_, items)) = &i.content {
                 self.mod_stack.push(i.ident.to_string());
-                for it in items { self.visit_item(it); }
+                for it in items {
+                    self.visit_item(it);
+                }
                 self.mod_stack.pop();
             }
         }
 
         fn visit_item_macro(&mut self, i: &'ast syn::ItemMacro) {
             // macro_rules! foo { ... }  OR  foo!{...}
-            let name = i.ident.as_ref().map(|x| x.to_string()).unwrap_or_else(|| "<macro>".into());
+            let name = i
+                .ident
+                .as_ref()
+                .map(|x| x.to_string())
+                .unwrap_or_else(|| "<macro>".into());
             // if this is a macro_rules definition, record as def
             if i.mac.path.is_ident("macro_rules") {
                 self.macros_def.push(MacroDef {
@@ -561,7 +687,13 @@ pub fn extract_occurrences_v1(file_path: &std::path::Path, ast: &File) -> (Vec<M
             } else {
                 // invocation-ish
                 self.macros_inv.push(MacroInvocationV1 {
-                    name: i.mac.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_else(|| "<macro>".into()),
+                    name: i
+                        .mac
+                        .path
+                        .segments
+                        .last()
+                        .map(|s| s.ident.to_string())
+                        .unwrap_or_else(|| "<macro>".into()),
                     module_path: self.mod_stack.clone(),
                     location: span_to_location(&self.file_path, i.span()),
                 });
@@ -571,7 +703,13 @@ pub fn extract_occurrences_v1(file_path: &std::path::Path, ast: &File) -> (Vec<M
 
         fn visit_expr_macro(&mut self, i: &'ast syn::ExprMacro) {
             self.macros_inv.push(MacroInvocationV1 {
-                name: i.mac.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_else(|| "<macro>".into()),
+                name: i
+                    .mac
+                    .path
+                    .segments
+                    .last()
+                    .map(|s| s.ident.to_string())
+                    .unwrap_or_else(|| "<macro>".into()),
                 module_path: self.mod_stack.clone(),
                 location: span_to_location(&self.file_path, i.span()),
             });
@@ -579,7 +717,12 @@ pub fn extract_occurrences_v1(file_path: &std::path::Path, ast: &File) -> (Vec<M
         }
 
         fn visit_path(&mut self, p: &'ast syn::Path) {
-            let s = p.segments.iter().map(|x| x.ident.to_string()).collect::<Vec<_>>().join("::");
+            let s = p
+                .segments
+                .iter()
+                .map(|x| x.ident.to_string())
+                .collect::<Vec<_>>()
+                .join("::");
             if !s.is_empty() {
                 self.paths.push(PathOccurrenceV1 {
                     path: s,
@@ -617,12 +760,16 @@ pub fn extract_occurrences_v1(file_path: &std::path::Path, ast: &File) -> (Vec<M
     (v.macros_def, v.macros_inv, v.paths, v.calls)
 }
 
-
 pub fn extract_occurrences(
     crate_name: &str,
     file_path: &std::path::Path,
     ast: &syn::File,
-) -> (Vec<MacroDef>, Vec<MacroInvocation>, Vec<PathOccurrence>, Vec<CallOccurrence>) {
+) -> (
+    Vec<MacroDef>,
+    Vec<MacroInvocation>,
+    Vec<PathOccurrence>,
+    Vec<CallOccurrence>,
+) {
     use syn::visit::Visit;
 
     #[derive(Default)]
@@ -725,7 +872,12 @@ pub fn extract_occurrences(
 
         fn visit_item_fn(&mut self, i: &'ast syn::ItemFn) {
             let (kind, is_pub) = if let Some(tr) = &self.in_trait {
-                (FnKind::TraitMethod { trait_name: tr.clone() }, true)
+                (
+                    FnKind::TraitMethod {
+                        trait_name: tr.clone(),
+                    },
+                    true,
+                )
             } else {
                 (FnKind::FreeFn, vis_is_public(&i.vis))
             };
@@ -788,7 +940,11 @@ pub fn extract_occurrences(
         }
 
         fn visit_item_macro(&mut self, i: &'ast syn::ItemMacro) {
-            let name = i.ident.as_ref().map(|x| x.to_string()).unwrap_or_else(|| "<macro>".into());
+            let name = i
+                .ident
+                .as_ref()
+                .map(|x| x.to_string())
+                .unwrap_or_else(|| "<macro>".into());
             if i.mac.path.is_ident("macro_rules") {
                 self.macros_def.push(MacroDef {
                     name,
@@ -796,9 +952,31 @@ pub fn extract_occurrences(
                     location: super::extract::span_to_location(&self.file_path, i.span()),
                 });
             } else {
+                let full_path = {
+                    let segs: Vec<String> = i
+                        .mac
+                        .path
+                        .segments
+                        .iter()
+                        .map(|s| s.ident.to_string())
+                        .collect();
+                    if segs.is_empty() {
+                        None
+                    } else {
+                        Some(segs.join("::"))
+                    }
+                };
+
                 self.macros_inv.push(MacroInvocation {
-                    name: i.mac.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_else(|| "<macro>".into()),
+                    name: i
+                        .mac
+                        .path
+                        .segments
+                        .last()
+                        .map(|s| s.ident.to_string())
+                        .unwrap_or_else(|| "<macro>".into()),
                     module_path: self.mod_stack.clone(),
+                    path: full_path,
                     location: super::extract::span_to_location(&self.file_path, i.span()),
                     enclosing_fn: self.current_fn.clone(),
                     enclosing_public: self.current_fn_is_public,
@@ -808,9 +986,30 @@ pub fn extract_occurrences(
         }
 
         fn visit_expr_macro(&mut self, i: &'ast syn::ExprMacro) {
+            let full_path = {
+                let segs: Vec<String> = i
+                    .mac
+                    .path
+                    .segments
+                    .iter()
+                    .map(|s| s.ident.to_string())
+                    .collect();
+                if segs.is_empty() {
+                    None
+                } else {
+                    Some(segs.join("::"))
+                }
+            };
             self.macros_inv.push(MacroInvocation {
-                name: i.mac.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_else(|| "<macro>".into()),
+                name: i
+                    .mac
+                    .path
+                    .segments
+                    .last()
+                    .map(|s| s.ident.to_string())
+                    .unwrap_or_else(|| "<macro>".into()),
                 module_path: self.mod_stack.clone(),
+                path: full_path,
                 location: super::extract::span_to_location(&self.file_path, i.span()),
                 enclosing_fn: self.current_fn.clone(),
                 enclosing_public: self.current_fn_is_public,
@@ -819,11 +1018,19 @@ pub fn extract_occurrences(
         }
 
         fn visit_path(&mut self, p: &'ast syn::Path) {
-            let s = p.segments.iter().map(|x| x.ident.to_string()).collect::<Vec<_>>().join("::");
+            let s = p
+                .segments
+                .iter()
+                .map(|x| x.ident.to_string())
+                .collect::<Vec<_>>()
+                .join("::");
 
             // reduce noise: only record “real” paths
             let keep = s.contains("::")
-                || matches!(s.as_str(), "std" | "core" | "alloc" | "crate" | "self" | "super");
+                || matches!(
+                    s.as_str(),
+                    "std" | "core" | "alloc" | "crate" | "self" | "super"
+                );
 
             if keep {
                 self.paths.push(PathOccurrence {
