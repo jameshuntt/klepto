@@ -217,3 +217,30 @@ pub enum ImportOrigin {
     Dependency,
     UnknownExternal,
 }
+
+
+
+
+#[derive(Debug, Clone, Serialize, Deserialize,
+// added Copy for the scanning module
+Copy)]
+pub enum UseSiteKind {
+    UseStmt,       // `use dep::foo`
+    ExternCrate,   // `extern crate dep;`
+    Attribute,     // `#[dep::something]`
+    MacroCall,     // `dep::foo!()`
+    Path,          // everything else `dep::foo::bar`
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UseSite {
+    pub dep: String,     // "regex"
+    pub path: String,    // "regex::RegexSet"
+    pub head: String,    // "RegexSet" (first segment after dep::)
+    pub kind: UseSiteKind,
+    pub location: FileLocation,     // 1-based
+    pub scope: String,   // "fn run" / "impl Foo" / "file"
+}
+use ::std::collections::BTreeMap;
+pub type UseSites = BTreeMap<String, BTreeMap<String, usize>>;
+pub type UseSitesCount = UseSites;
