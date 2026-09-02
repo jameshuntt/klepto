@@ -1,0 +1,16 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+alpha = { path = "../alpha", optional = true }
+beta = { path = "../beta", optional = true }
+
+[dev-dependencies]
+devd = { path = "../devd" }
+
+[features]
+default = []
+a = ["dep:alpha"]
+# `beta` currently has cargo's implicit feature `beta`; klepto.toml moves it under `a`.

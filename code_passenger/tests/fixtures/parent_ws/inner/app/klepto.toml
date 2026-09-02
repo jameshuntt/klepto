@@ -1,0 +1,7 @@
+# Desired feature model for `app`: move `beta` behind feature `b`.
+[app]
+optional = ["beta"]
+default = []
+
+[app.features]
+b = ["dep:beta"]

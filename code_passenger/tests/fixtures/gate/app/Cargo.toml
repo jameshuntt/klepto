@@ -1,0 +1,12 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+beta = { path = "../beta" }
+
+[features]
+default = []
+# a dashed feature name: `feature-probe extra-io` must find it (crate names are `_`, features keep `-`)
+extra-io = []

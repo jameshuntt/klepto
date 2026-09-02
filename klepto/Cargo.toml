@@ -1,0 +1,35 @@
+[package]
+name = "klepto"
+version = "0.2.0"
+edition = "2024"
+rust-version = "1.85"
+
+license = "MIT OR Apache-2.0"
+description = "Rust source extraction on syn: imports, functions, macro/path/call occurrences, dependency use sites, snapshots and lint rules for a crate or workspace"
+keywords = ["syn", "ast", "static-analysis", "workspace", "dependencies"]
+categories = ["development-tools"]
+
+authors = ["James Hunt <jameshuntdevelopment@gmail.com>"]
+repository = "https://github.com/jameshuntt/klepto"
+
+include = ["src/**", "Cargo.toml", "LICENSE*", "README*"]
+
+[features]
+default = ["span-locations"]
+# Line/column on every FileLocation via proc_macro2 span-locations.
+span-locations = ["proc-macro2/span-locations"]
+
+[dependencies]
+syn = { version = "2.0.100", features = ["full", "parsing", "visit", "visit-mut", "extra-traits"] }
+quote = "1"
+proc-macro2 = "1"
+walkdir = "2"
+globset = "0.4"
+thiserror = "1"
+regex = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+blake3 = "1"
+sha2 = "0.10"
+cargo_metadata = "0.18"
+toml = "0.8"

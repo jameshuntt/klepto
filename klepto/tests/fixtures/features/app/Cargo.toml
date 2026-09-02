@@ -1,0 +1,26 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+core_dep = { path = "../core_dep" }
+opt_a = { path = "../opt_a", optional = true }
+opt_b = { path = "../opt_b", optional = true }
+
+[dev-dependencies]
+devonly = { path = "../devonly" }
+
+[target.'cfg(unix)'.dependencies]
+unixonly = { path = "../unixonly" }
+
+[features]
+default = ["fast"]
+fast = []
+# `dep:opt_b` means no implicit `opt_b` feature; `opt_a` is the implicit
+# feature cargo creates for the optional dep of the same name.
+net = ["dep:opt_b", "opt_a"]
+# forwarded feature on a non-optional dep
+full = ["net", "core_dep/extra"]
+# weak: enables opt_b's `extra` only if opt_b is enabled by something else
+weak = ["opt_b?/extra"]

@@ -1,0 +1,1313 @@
+{
+  "phase": "Done",
+  "files": {
+    "analysis.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/action.rs": {
+      "used_external": [
+        "serde"
+      ],
+      "used_internal_roots": [
+        "super"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/checks.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate",
+        "super"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/lens.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/passes.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate",
+        "super"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/passes/build_file_view.rs": {
+      "used_external": [
+        "im"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/passes/build_totals.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/produce.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/reducer.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/state.rs": {
+      "used_external": [
+        "im",
+        "serde"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "analysis/store.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "cargo.rs": {
+      "used_external": [
+        "toml_edit"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "cli.rs": {
+      "used_external": [
+        "clap",
+        "serde_json"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "engine.rs": {
+      "used_external": [
+        "klepto",
+        "regex",
+        "serde",
+        "walkdir"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "error.rs": {
+      "used_external": [
+        "klepto",
+        "serde_json",
+        "thiserror",
+        "toml"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "lib.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "main.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "code_passenger"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "model.rs": {
+      "used_external": [
+        "klepto",
+        "serde"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "packs.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "packs/rust.rs": {
+      "used_external": [
+        "regex"
+      ],
+      "used_internal_roots": [
+        "crate",
+        "super"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "packs/rust/detectors.rs": {
+      "used_external": [
+        "regex"
+      ],
+      "used_internal_roots": [
+        "code_passenger",
+        "crate",
+        "self",
+        "super"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "packs/rust/helpers.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "passenger/command.rs": {
+      "used_external": [
+        "chrono",
+        "clap",
+        "serde_json"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "passenger/mod.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "passenger/store.rs": {
+      "used_external": [
+        "chrono",
+        "hex",
+        "serde",
+        "serde_json",
+        "sha2",
+        "similar",
+        "toml",
+        "walkdir",
+        "zstd"
+      ],
+      "used_internal_roots": [
+        "crate",
+        "super"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "passenger/types.rs": {
+      "used_external": [
+        "chrono",
+        "serde"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "plans.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "plans/compact.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "plans/verbose.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "scaffolds.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "scanning.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "scanning/helpers.rs": {
+      "used_external": [
+        "klepto",
+        "regex"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    },
+    "scanning/patterns.rs": {
+      "used_external": [
+        "regex"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 7,
+          "Serialize": 7
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 11,
+          "cargo": 1,
+          "engine": 11,
+          "error": 18,
+          "model": 27,
+          "packs": 6,
+          "passenger": 4,
+          "plans": 3,
+          "scaffolds": 3,
+          "scanning": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "HeaderPlan": 2,
+          "HeaderPlanV2": 2,
+          "LanguagePack": 1,
+          "action": 4,
+          "produce": 1,
+          "reducer": 1,
+          "state": 9,
+          "types": 1
+        }
+      }
+    }
+  },
+  "crate_totals": {
+    "external_dep_hits": {
+      "serde": 462
+    },
+    "internal_root_hits": {
+      "crate": 2805,
+      "super": 759
+    },
+    "external_head_hits": {},
+    "internal_head_hits": {},
+    "top_external_symbols": {
+      "serde": [
+        [
+          "Deserialize",
+          231
+        ],
+        [
+          "Serialize",
+          231
+        ]
+      ]
+    }
+  },
+  "findings": []
+}

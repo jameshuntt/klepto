@@ -1,0 +1,1924 @@
+// start of scaffolds.rs
+// src/scaffolds.rs
+use crate::error::{PassengerError, Result};
+use crate::model::ScaffoldKind;
+
+pub trait ScaffoldPlan: Send + Sync {
+    fn id(&self) -> &'static str;
+
+    /// Template selection by “kind”.
+    /// Templates can use placeholders:
+    /// - {snake}  => snake_case name
+    /// - {Ty}     => PascalCase type name
+    fn template(&self, kind: ScaffoldKind) -> &'static str;
+}
+
+#[derive(Debug, Default)]
+pub struct DefaultScaffoldPlan;
+
+impl ScaffoldPlan for DefaultScaffoldPlan {
+    fn id(&self) -> &'static str { "default" }
+
+    fn template(&self, kind: ScaffoldKind) -> &'static str {
+        match kind {
+            ScaffoldKind::Module => r#"//! {snake}.rs
+//! code_passenger scaffold (module)
+
+pub mod {snake} {
+    // TODO: implement
+}
+"#,
+
+            ScaffoldKind::Component => r#"//! {snake}.rs
+//! code_passenger scaffold (component)
+
+#[derive(Debug, Default)]
+pub struct {Ty};
+
+impl {Ty} {
+    pub fn new() -> Self { Self::default() }
+}
+"#,
+
+            ScaffoldKind::Service => r#"//! {snake}.rs
+//! code_passenger scaffold (service)
+
+#[derive(Debug, Default)]
+pub struct {Ty};
+
+impl {Ty} {
+    pub fn run(&self) {
+        // TODO: service logic
+    }
+}
+"#,
+
+            ScaffoldKind::Test => r#"//! {snake}.rs
+//! code_passenger scaffold (test)
+
+#[test]
+fn {snake}_smoke() {
+    assert!(true);
+}
+"#,
+        }
+    }
+}
+
+pub fn get_scaffold_plan(id: &str) -> Result<Box<dyn ScaffoldPlan>> {
+    match id {
+        "default" => Ok(Box::new(DefaultScaffoldPlan::default())),
+        _ => Err(PassengerError::Unsupported(format!("scaffold plan '{id}' not available"))),
+    }
+}
+// end of scaffolds.rs
+
+// start of analysis/reducer.rs
+use super::{action::Action, state::AnalysisState};
+
+pub fn reduce_in_place(st: &mut AnalysisState, a: Action) {
+    match a {
+        Action::SetPhase(p) => st.phase = p,
+
+        Action::UpsertFile { path, analysis } => {
+            st.files.insert(path, analysis);
+        }
+
+        Action::AddFinding(f) => st.findings.push(f),
+        Action::AddFindings(mut fs) => st.findings.append(&mut fs),
+
+        Action::IncExternalDepHit { dep, by } => {
+            let cur = st.crate_totals.external_dep_hits.get(&dep).copied().unwrap_or(0);
+            st.crate_totals.external_dep_hits.insert(dep, cur + by);
+        }
+
+        Action::IncInternalRootHit { root, by } => {
+            let cur = st.crate_totals.internal_root_hits.get(&root).copied().unwrap_or(0);
+            st.crate_totals.internal_root_hits.insert(root, cur + by);
+        }
+
+        Action::SetTopExternalSymbols { dep, top } => {
+            st.crate_totals.top_external_symbols.insert(dep, top);
+        }
+    }
+}
+// end of analysis/reducer.rs
+
+// start of analysis/action.rs
+use super::state::{FileAnalysis, Finding, Phase};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Action {
+    SetPhase(Phase),
+    UpsertFile {
+        path: String,
+        analysis: FileAnalysis,
+    },
+    AddFinding(Finding),
+    AddFindings(Vec<Finding>),
+    IncExternalDepHit {
+        dep: String,
+        by: usize,
+    },
+    IncInternalRootHit {
+        root: String,
+        by: usize,
+    },
+    SetTopExternalSymbols {
+        dep: String,
+        top: Vec<(String, usize)>,
+    },
+}
+// end of analysis/action.rs
+
+// start of analysis/checks.rs
+use super::{
+    action::Action,
+    state::{AnalysisState, Finding},
+};
+use crate::engine::EngineOutput;
+
+pub trait Rule: Send + Sync {
+    fn id(&self) -> &'static str;
+    fn findings(&self, raw: &EngineOutput, st: &AnalysisState) -> Vec<Finding>;
+}
+
+pub fn run_rules(raw: &EngineOutput, st: &AnalysisState, rules: &[Box<dyn Rule>]) -> Vec<Action> {
+    let mut out = Vec::new();
+    for r in rules {
+        let fs = r.findings(raw, st);
+        if !fs.is_empty() {
+            out.push(Action::AddFindings(fs));
+        }
+    }
+    out.push(Action::SetPhase(super::state::Phase::ChecksRun));
+    out
+}
+// end of analysis/checks.rs
+
+// start of analysis/passes/build_totals.rs
+use std::collections::BTreeMap;
+
+use crate::analysis::{action::Action, passes::Pass, state::{AnalysisState, Phase}};
+
+pub struct BuildTotals {
+    pub top_n: usize,
+}
+impl Default for BuildTotals {
+    fn default() -> Self {
+        Self { top_n: 25 }
+    }
+}
+
+impl Pass for BuildTotals {
+    fn id(&self) -> &'static str {
+        "build_totals"
+    }
+
+    fn actions(&self, raw: &crate::engine::EngineOutput, _st: &AnalysisState) -> Vec<Action> {
+        let mut out = Vec::new();
+
+        // dep -> sym -> count across whole crate
+        let mut ext_sym_totals: BTreeMap<String, BTreeMap<String, usize>> = BTreeMap::new();
+
+        for r in &raw.reports {
+            // external counts
+            for (dep, syms) in &r.external_dep_symbol_counts {
+                for (sym, c) in syms {
+                    *ext_sym_totals
+                        .entry(dep.clone())
+                        .or_default()
+                        .entry(sym.clone())
+                        .or_insert(0) += *c;
+                    out.push(Action::IncExternalDepHit {
+                        dep: dep.clone(),
+                        by: *c,
+                    });
+                }
+            }
+
+            // internal counts (roots like crate/self/super/<crate>)
+            for (root, syms) in &r.internal_dep_symbol_counts {
+                let total = syms.values().copied().sum::<usize>();
+                if total > 0 {
+                    out.push(Action::IncInternalRootHit {
+                        root: root.clone(),
+                        by: total,
+                    });
+                }
+            }
+        }
+
+        // top symbols per dep
+        for (dep, syms) in ext_sym_totals {
+            let mut v: Vec<(String, usize)> = syms.into_iter().collect();
+            v.sort_by_key(|(_k, c)| std::cmp::Reverse(*c));
+            v.truncate(self.top_n);
+            out.push(Action::SetTopExternalSymbols { dep, top: v });
+        }
+
+        out.push(Action::SetPhase(Phase::TotalsBuilt));
+        out
+    }
+}
+// end of analysis/passes/build_totals.rs
+
+// start of analysis/passes/build_file_view.rs
+pub struct BuildFileViews;
+use crate::analysis::{
+    action::Action,
+    passes::Pass,
+    state::{AnalysisState, FileAnalysis, Phase},
+};
+use im::{OrdMap, OrdSet};
+
+impl Pass for BuildFileViews {
+    fn id(&self) -> &'static str {
+        "build_file_views"
+    }
+
+    fn actions(&self, raw: &crate::engine::EngineOutput, _st: &AnalysisState) -> Vec<Action> {
+        let mut out = Vec::new();
+        for r in &raw.reports {
+            out.push(Action::UpsertFile {
+                path: r.document.relative_path.clone(),
+                analysis: file_view(r),
+            });
+        }
+        out.push(Action::SetPhase(Phase::FileViewsBuilt));
+        out
+    }
+}
+
+fn file_view(r: &crate::model::FileReport) -> FileAnalysis {
+    let used_external: OrdSet<String> = r.used.packages.iter().cloned().collect();
+
+    let used_internal_roots: OrdSet<String> = r
+        .used
+        .modules
+        .iter()
+        .map(|p| p.split("::").next().unwrap_or(p).to_string())
+        .collect();
+
+    // BTreeMap<String, BTreeMap<String, usize>>  ->  OrdMap<String, OrdMap<String, usize>>
+    let external_symbol_counts: OrdMap<String, OrdMap<String, usize>> = r
+        .external_dep_symbol_counts
+        .clone()
+        .into_iter()
+        .map(|(dep, syms)| {
+            let inner: OrdMap<String, usize> = syms.into_iter().collect::<OrdMap<String, usize>>();
+            (dep, inner)
+        })
+        .collect::<OrdMap<String, OrdMap<String, usize>>>();
+
+    let internal_symbol_counts: OrdMap<String, OrdMap<String, usize>> = r
+        .internal_dep_symbol_counts
+        .clone()
+        .into_iter()
+        .map(|(root, syms)| {
+            let inner: OrdMap<String, usize> = syms.into_iter().collect::<OrdMap<String, usize>>();
+            (root, inner)
+        })
+        .collect::<OrdMap<String, OrdMap<String, usize>>>();
+
+    FileAnalysis {
+        used_external,
+        used_internal_roots,
+        external_symbol_counts,
+        internal_symbol_counts,
+    }
+}
+// end of analysis/passes/build_file_view.rs
+
+// start of analysis/store.rs
+use super::{produce::produce, reducer::reduce_in_place, action::Action, state::AnalysisState};
+
+#[derive(Debug, Default, Clone)]
+pub struct Store {
+    st: AnalysisState,
+}
+
+impl Store {
+    pub fn new() -> Self { Self { st: AnalysisState::default() } }
+    pub fn state(&self) -> &AnalysisState { &self.st }
+    pub fn into_state(self) -> AnalysisState { self.st }
+
+    pub fn dispatch(&mut self, a: Action) {
+        self.dispatch_many(std::iter::once(a));
+    }
+
+    pub fn dispatch_many<I: IntoIterator<Item = Action>>(&mut self, actions: I) {
+        let next = produce(&self.st, |draft| {
+            for a in actions {
+                reduce_in_place(draft, a);
+            }
+        });
+        self.st = next;
+    }
+}
+// end of analysis/store.rs
+
+// start of analysis/lens.rs
+pub struct Lens<S, A> {
+    pub get: fn(&S) -> &A,
+    pub get_mut: fn(&mut S) -> &mut A,
+}
+
+impl<S, A> Lens<S, A> {
+    pub fn over(&self, s: &mut S, f: impl FnOnce(&mut A)) {
+        f((self.get_mut)(s));
+    }
+}
+// end of analysis/lens.rs
+
+// start of analysis/produce.rs
+pub fn produce<S: Clone>(base: &S, f: impl FnOnce(&mut S)) -> S {
+    let mut draft = base.clone();
+    f(&mut draft);
+    draft
+}
+// end of analysis/produce.rs
+
+// start of analysis/passes.rs
+use super::{action::Action, state::AnalysisState};
+use crate::engine::EngineOutput;
+
+pub trait Pass: Send + Sync {
+    fn id(&self) -> &'static str;
+    fn actions(&self, raw: &EngineOutput, st: &AnalysisState) -> Vec<Action>;
+}
+
+pub mod build_file_view;
+pub use build_file_view::BuildFileViews;
+
+pub mod build_totals;
+pub use build_totals::BuildTotals;
+
+pub mod prelude {
+    pub use super::BuildFileViews;
+    pub use super::BuildTotals;
+}
+// end of analysis/passes.rs
+
+// start of analysis/state.rs
+use im::{OrdMap, OrdSet};
+use serde::{Serialize, Deserialize};
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AnalysisState {
+    pub phase: Phase,
+
+    // per-file derived view (key = relative path)
+    pub files: OrdMap<String, FileAnalysis>,
+
+    // crate-level rollups
+    pub crate_totals: CrateTotals,
+
+    // findings from checks/passes
+    pub findings: Vec<Finding>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct FileAnalysis {
+    pub used_external: OrdSet<String>,
+    pub used_internal_roots: OrdSet<String>,     // crate/self/super/code_passenger
+    pub external_symbol_counts: OrdMap<String, OrdMap<String, usize>>,
+    pub internal_symbol_counts: OrdMap<String, OrdMap<String, usize>>,
+}
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct CrateTotals {
+    pub external_dep_hits: OrdMap<String, usize>, // dep -> total hits
+    pub internal_root_hits: OrdMap<String, usize>,// root -> total hits
+    pub external_head_hits: OrdMap<String, usize>, // dep -> total hits
+    pub internal_head_hits: OrdMap<String, usize>,// root -> total hits
+    pub top_external_symbols: OrdMap<String, Vec<(String, usize)>>, // dep -> [(sym,count)]
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Finding {
+    pub severity: Severity,
+    pub file: Option<String>,
+    pub code: String,
+    pub message: String,
+    pub hint: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Severity { Info, Warn, Error }
+
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub enum Phase {
+    #[default]
+    Init,
+    FileViewsBuilt,
+    TotalsBuilt,
+    ChecksRun,
+    Done,
+}
+// end of analysis/state.rs
+
+// start of plans/compact.rs
+use crate::model::{FileReport, PlanSection};
+use super::{HeaderPlan, HeaderPlanV2};
+
+
+pub struct CompactPlan;
+
+impl HeaderPlan for CompactPlan {
+    fn id(&self) -> &'static str { "compact" }
+
+    fn render_for_rust(&self, report: &FileReport, begin: &str, end: &str) -> String {
+        let mut out = String::new();
+        out.push_str(begin);
+        out.push('\n');
+
+        out.push_str(&format!("//! file: {}\n", report.document.relative_path));
+        out.push_str(&format!("//! used_deps: {:?}\n", report.used.packages));
+        out.push_str("//!\n");
+        for f in &report.corpus_features {
+            out.push_str(&format!("#![cfg(feature = \"{}\")]\n", f));
+        }
+
+        out.push_str(end);
+        out.push('\n');
+        out
+    }
+}
+
+impl HeaderPlanV2 for CompactPlan {
+    fn id(&self) -> &'static str { "compact" }
+
+    fn sections(&self) -> &[PlanSection] {
+        const SECTIONS: &[PlanSection] = &[
+            PlanSection::DocumentDetails,
+            PlanSection::CorpusGates,
+        ];
+        SECTIONS
+    }
+}
+// end of plans/compact.rs
+
+// start of plans/verbose.rs
+use crate::model::{FileReport, PlanSection};
+use super::{HeaderPlan, HeaderPlanV2};
+
+pub struct VerbosePlan;
+
+impl HeaderPlan for VerbosePlan {
+    fn id(&self) -> &'static str { "verbose" }
+
+    fn render_for_rust(&self, report: &FileReport, begin: &str, end: &str) -> String {
+        let mut out = String::new();
+        out.push_str(begin);
+        out.push('\n');
+
+        out.push_str("//! ----------------------------------------------\n");
+        out.push_str("//! DOCUMENT DETAILS -----------------------------\n");
+        out.push_str("//!\n");
+        out.push_str(&format!("//! filename:{}\n", report.document.filename));
+        out.push_str("//! description:\n");
+        out.push_str("//! usages:none in crate yet\n");
+        out.push_str("//!\n");
+
+        out.push_str("//! ----------------------------------------------\n");
+        out.push_str("//! FEATURE NOTES --------------------------------\n");
+
+        for n in &report.notes {
+            out.push_str("//!\n");
+            out.push_str(&format!("//! feature_name:{}\n", n.feature_name));
+            out.push_str(&format!("//! deps:{:?}\n", n.deps));
+            out.push_str(&format!("//! scope:{:?}\n", n.scope));
+            out.push_str(&format!("//! corpus:{}\n", n.corpus));
+        }
+
+        out.push_str("//!\n");
+        out.push_str("//! ----------------------------------------------\n");
+        out.push_str("//! CORPUS FEATURES ------------------------------\n");
+        out.push_str("//!\n");
+
+        for f in &report.corpus_features {
+            out.push_str(&format!("#![cfg(feature = \"{}\")]\n", f));
+        }
+
+        out.push_str(end);
+        out.push('\n');
+        out
+    }
+}
+
+impl HeaderPlanV2 for VerbosePlan {
+    fn id(&self) -> &'static str { "verbose" }
+
+    fn sections(&self) -> &[PlanSection] {
+        const SECTIONS: &[PlanSection] = &[
+            PlanSection::DocumentDetails,
+            PlanSection::FeatureNotes,
+            PlanSection::CorpusGates,
+        ];
+        SECTIONS
+    }
+}
+// end of plans/verbose.rs
+
+// start of cargo.rs
+use crate::{error::{PassengerError, Result}, model::ManifestInfo};
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs;
+
+fn norm_dep_key(dep: &str) -> String {
+    dep.replace('-', "_")
+}
+
+fn collect_deps_from_tablelike(
+    tbl: &dyn toml_edit::TableLike,
+    all_deps: &mut BTreeSet<String>,
+    optional_deps: &mut BTreeSet<String>,
+) {
+    for (k, v) in tbl.iter() {
+        let key = norm_dep_key(k);
+        all_deps.insert(key.clone());
+
+        // dep value can be "1.0" OR { version="1", optional=true } OR table form
+        let is_optional = v
+            .as_table_like()
+            .and_then(|t| t.get("optional"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or(false);
+
+        if is_optional {
+            optional_deps.insert(key);
+        }
+    }
+}
+
+pub fn load_manifest(path: &str) -> Result<ManifestInfo> {
+    let raw = fs::read_to_string(path)?;
+    let doc = raw.parse::<toml_edit::DocumentMut>()
+        .map_err(|e| PassengerError::Toml(e.to_string()))?;
+
+    let crate_name = doc
+        .get("package")
+        .and_then(|t| t.get("name"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
+        .ok_or(PassengerError::MissingPackageName)?;
+
+    let mut all_deps = BTreeSet::<String>::new();
+    let mut optional_deps = BTreeSet::<String>::new();
+
+    // plain deps tables
+    for key in ["dependencies", "dev-dependencies", "build-dependencies"] {
+        if let Some(tbl) = doc.get(key).and_then(|t| t.as_table_like()) {
+            collect_deps_from_tablelike(tbl, &mut all_deps, &mut optional_deps);
+        }
+    }
+
+    // target-specific deps: [target.'cfg(...)'.dependencies] etc
+    if let Some(targets) = doc.get("target").and_then(|t| t.as_table_like()) {
+        for (_tname, titem) in targets.iter() {
+            if let Some(ttbl) = titem.as_table_like() {
+                for key in ["dependencies", "dev-dependencies", "build-dependencies"] {
+                    if let Some(tbl) = ttbl.get(key).and_then(|x| x.as_table_like()) {
+                        collect_deps_from_tablelike(tbl, &mut all_deps, &mut optional_deps);
+                    }
+                }
+            }
+        }
+    }
+
+    // features (same as you already do)
+    let mut features_raw: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    if let Some(feats) = doc.get("features").and_then(|t| t.as_table_like()) {
+        for (fname, v) in feats.iter() {
+            let mut members = vec![];
+            if let Some(arr) = v.as_array() {
+                for item in arr.iter() {
+                    if let Some(s) = item.as_str() {
+                        members.push(s.to_string());
+                    }
+                }
+            }
+            features_raw.insert(fname.to_string(), members);
+        }
+    }
+
+    // feature -> deps it enables (keep your exact logic, but it references optional_deps)
+    let mut feature_deps: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for (fname, members) in &features_raw {
+        let mut deps_for_feature = BTreeSet::<String>::new();
+        for m in members {
+            if let Some(dep) = m.strip_prefix("dep:") {
+                let dep = norm_dep_key(dep.trim());
+                if optional_deps.contains(&dep) {
+                    deps_for_feature.insert(dep);
+                }
+                continue;
+            }
+
+            if let Some((left, _right)) = m.split_once('/') {
+                let left = norm_dep_key(left.trim());
+                if optional_deps.contains(&left) {
+                    deps_for_feature.insert(left);
+                }
+                continue;
+            }
+
+            let mnorm = norm_dep_key(m.trim());
+            if optional_deps.contains(&mnorm) {
+                deps_for_feature.insert(mnorm);
+            }
+        }
+        feature_deps.insert(fname.clone(), deps_for_feature);
+    }
+
+    let mut dep_features: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for (feat, deps) in &feature_deps {
+        for dep in deps {
+            dep_features.entry(dep.clone()).or_default().insert(feat.clone());
+        }
+    }
+
+    Ok(ManifestInfo {
+        crate_name,
+        features_raw,
+        all_deps,
+        optional_deps,
+        feature_deps,
+        dep_features,
+    })
+}
+// end of cargo.rs
+
+// start of error.rs
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum PassengerError {
+    #[error("io error: {0}")]
+    Io(#[from] std::io::Error),
+
+    #[error("invalid Cargo.toml: {0}")]
+    Toml(String),
+
+    #[error("missing [package].name in Cargo.toml")]
+    MissingPackageName,
+
+    #[error("path error: {0}")]
+    Path(String),
+
+    #[error("unsupported: {0}")]
+    Unsupported(String),
+
+    #[error("changes needed (run annotate --write)")]
+    ChangesNeeded,
+}
+
+pub type Result<T> = std::result::Result<T, PassengerError>;
+// end of error.rs
+
+// start of analysis.rs
+use crate::engine::EngineOutput;
+
+pub mod action;
+pub mod checks;
+pub mod lens;
+pub mod passes;
+pub mod produce;
+pub mod reducer;
+pub mod state;
+pub mod store;
+
+use store::Store;
+use passes::{Pass, BuildFileViews, BuildTotals};
+
+pub fn run(raw: &EngineOutput) -> state::AnalysisState {
+    let mut store = Store::new();
+
+    let passes: Vec<Box<dyn Pass>> = vec![
+        Box::new(BuildFileViews),
+        Box::new(BuildTotals::default()),
+    ];
+
+    for p in passes {
+        let actions = p.actions(raw, store.state());
+        store.dispatch_many(actions);
+    }
+
+    // rules (optional)
+    let rules: Vec<Box<dyn checks::Rule>> = vec![];
+    let check_actions = checks::run_rules(raw, store.state(), &rules);
+    store.dispatch_many(check_actions);
+
+    store.dispatch(action::Action::SetPhase(state::Phase::Done));
+    store.into_state()
+}
+// end of analysis.rs
+
+// start of lib.rs
+pub mod cli;
+pub mod cargo;
+pub mod model;
+pub mod error;
+pub mod plans;
+pub mod packs;
+pub mod engine;
+pub mod scaffolds;
+pub mod analysis;
+// end of lib.rs
+
+// start of packs/rust/helpers.rs
+
+
+
+
+pub(super) fn to_type_name(snake: &str) -> String {
+    let mut out = String::new();
+    let mut up = true;
+    for c in snake.chars() {
+        if c == '_' { up = true; continue; }
+        if up { out.extend(c.to_uppercase()); up = false; }
+        else { out.push(c); }
+    }
+    if out.is_empty() { "Thing".into() } else { out }
+}
+
+pub(super) fn norm_ident(s: &str) -> String {
+    s.replace('-', "_")
+}
+// end of packs/rust/helpers.rs
+
+// start of packs/rust/detectors.rs
+use std::collections::BTreeSet;
+
+use crate::model::UsedSymbols;
+use crate::packs::rust::RustPack;
+use crate::packs::rust::helpers::norm_ident;
+use regex::Regex;
+
+
+/// Helper used by core (since usage depends on optional deps list).
+pub fn detect_usage_with_optional_deps(
+    content: &str,
+    optional_deps: &std::collections::BTreeSet<String>,
+) -> UsedSymbols {
+    let (deps, set) = RustPack::build_usage_set(optional_deps);
+    let matches = set.matches(content);
+
+    let mut used = UsedSymbols::default();
+    // pats contain multiple entries per dep; map by prefix grouping
+    // simplest: re-check per dep by string contains once any match is found:
+    // BUT we already have indices; so we do a conservative approach:
+    for i in matches.into_iter() {
+        // we added 4 patterns per dep
+        let dep_idx = i / 4;
+        if let Some(dep) = deps.get(dep_idx) {
+            used.packages.insert(dep.clone());
+        }
+    }
+    used
+}
+
+pub fn detect_usage_with_deps(
+    content: &str,
+    deps: &std::collections::BTreeSet<String>,
+    crate_name: &str,
+) -> UsedSymbols {
+    let (deps_vec, set) = RustPack::build_usage_set(deps);
+    let matches = set.matches(content);
+
+    let mut used = UsedSymbols::default();
+    for i in matches.into_iter() {
+        let dep_idx = i / 4; // 4 patterns per dep
+        if let Some(dep) = deps_vec.get(dep_idx) {
+            used.packages.insert(dep.clone());
+        }
+    }
+
+    used.modules = detect_internal_paths(content, crate_name);
+    used
+}
+
+/// Collect internal crate path usage like:
+/// - crate::engine::RunContext
+/// - super::foo::Bar
+/// - self::x
+/// - code_passenger::model::FileReport   (crate name, common in tests/)
+fn detect_internal_paths(content: &str, crate_name: &str) -> BTreeSet<String> {
+    let crate_name = norm_ident(crate_name);
+    let root_alt = format!("(?:crate|self|super|{})", regex::escape(&crate_name));
+
+    // Capture root + tail path. Tail may include multiple :: segments.
+    let re = Regex::new(&format!(
+        r"(?m)(?:^|[^A-Za-z0-9_])(?:::)?\s*({})\s*::\s*([A-Za-z_][A-Za-z0-9_]*(?:\s*::\s*[A-Za-z_][A-Za-z0-9_]*)*)",
+        root_alt
+    )).expect("valid internal path regex");
+
+    let split = Regex::new(r"\s*::\s*").expect("valid split regex");
+
+    let mut out = BTreeSet::new();
+
+    for cap in re.captures_iter(content) {
+        let root = cap.get(1).unwrap().as_str();
+        let tail = cap.get(2).unwrap().as_str();
+        let parts: Vec<&str> = split.split(tail).filter(|s| !s.is_empty()).collect();
+        if parts.is_empty() {
+            continue;
+        }
+
+        // Always record root::top (crate::engine)
+        out.insert(format!("{root}::{}", parts[0]));
+
+        // Also record root::top::second when present (crate::packs::rust)
+        if parts.len() >= 2 {
+            out.insert(format!("{root}::{}::{}", parts[0], parts[1]));
+        }
+    }
+
+    out
+}
+// end of packs/rust/detectors.rs
+
+// start of packs/rust.rs
+use crate::model::{FileReport, ScaffoldKind, ScaffoldOutput, ScaffoldRequest, UsedSymbols};
+use crate::packs::rust::helpers::to_type_name;
+use crate::plans::HeaderPlan;
+use crate::scaffolds::ScaffoldPlan;
+use regex::RegexSet;
+
+#[derive(Default)]
+pub struct RustPack;
+
+impl RustPack {
+    pub const BEGIN_MARK: &'static str = "//! code_passenger:begin";
+    pub const END_MARK: &'static str = "//! code_passenger:end";
+
+    fn build_usage_set(deps: &std::collections::BTreeSet<String>) -> (Vec<String>, RegexSet) {
+        let deps: Vec<String> = deps.iter().cloned().collect();
+        let mut pats = Vec::with_capacity(deps.len() * 4);
+
+        for d in &deps {
+            let e = regex::escape(d);
+
+            // Match:
+            // - tokio::something
+            // - ::tokio::something
+            pats.push(format!(r"(?m)(?:^|[^A-Za-z0-9_])(?:::)?\s*{}\s*::", e));
+
+            // Match:
+            // - use tokio::...
+            // - use ::tokio::...
+            pats.push(format!(r"(?m)^\s*use\s+(?:::)?\s*{}\b", e));
+
+            // Match:
+            // - extern crate tokio;
+            pats.push(format!(r"(?m)^\s*extern\s+crate\s+{}\s*;", e));
+
+            // Match:
+            // - #[tokio::main]
+            // - #[::tokio::main]
+            pats.push(format!(r"(?m)#\s*\[\s*(?:::)?\s*{}\s*::", e));
+        }
+
+        let set = RegexSet::new(&pats).expect("valid regex set");
+        (deps, set)
+    }
+
+    fn replace_or_insert(original: &str, header: &str) -> String {
+        // Replace existing marked region if present
+        if let Some(beg) = original.find(Self::BEGIN_MARK) {
+            if let Some(end) = original.find(Self::END_MARK) {
+                let end_line = original[end..].find('\n').map(|i| end + i + 1).unwrap_or(original.len());
+                let mut out = String::new();
+                out.push_str(&original[..beg]);
+                out.push_str(header);
+                out.push_str(&original[end_line..]);
+                return out;
+            }
+        }
+
+        // Insert after leading inner attrs `#![...]` (keep them first)
+        let mut idx = 0usize;
+        for line in original.lines() {
+            let len = line.len();
+            let line_with_nl = len + 1; // assume '\n' (works fine for typical files)
+            let t = line.trim_start();
+            if t.starts_with("#![") {
+                idx += line_with_nl;
+                continue;
+            }
+            break;
+        }
+
+        let mut out = String::new();
+        out.push_str(&original[..idx]);
+        out.push_str(header);
+        out.push_str(&original[idx..]);
+        out
+    }
+}
+
+impl super::LanguagePack for RustPack {
+    fn id(&self) -> &'static str { "rust" }
+
+    fn matches_path(&self, path: &std::path::Path) -> bool {
+        path.extension().and_then(|s| s.to_str()) == Some("rs")
+    }
+
+    fn detect_usage(&self, content: &str) -> UsedSymbols {
+        // NOTE: usage detection depends on optional_deps; pack alone can’t know them.
+        // So core will call `RustPack::detect_usage_with_optional_deps(...)`.
+        // This method exists for trait completeness, but is unused.
+        let _ = content;
+        UsedSymbols::default()
+    }
+
+    fn render_header(&self, plan: &dyn HeaderPlan, report: &FileReport) -> String {
+        plan.render_for_rust(report, Self::BEGIN_MARK, Self::END_MARK)
+    }
+
+    fn apply_header(&self, original: &str, header: &str) -> String {
+        Self::replace_or_insert(original, header)
+    }
+
+
+    // inside impl super::LanguagePack for RustPack:
+    fn scaffold(&self, plan: &dyn ScaffoldPlan, req: ScaffoldRequest) -> crate::error::Result<ScaffoldOutput> {
+        let snake = req.name;
+
+        let mut path = if matches!(req.kind, ScaffoldKind::Test) {
+            std::path::PathBuf::from("tests")
+        } else {
+            std::path::PathBuf::from("src")
+        };
+
+        for seg in req.module_path {
+            path.push(seg);
+        }
+        path.push(format!("{snake}.rs"));
+
+        let ty = to_type_name(&snake);
+
+        let tpl = plan.template(req.kind);
+        let content = tpl
+            .replace("{snake}", &snake)
+            .replace("{Ty}", &ty);
+
+        Ok(ScaffoldOutput { files: vec![(path, content)] })
+    }
+
+}
+
+
+pub mod detectors;
+pub mod helpers;
+// end of packs/rust.rs
+
+// start of packs.rs
+use crate::{
+    error::{PassengerError, Result},
+    model::{FileReport, ScaffoldOutput, ScaffoldRequest, UsedSymbols},
+    plans::HeaderPlan, scaffolds::ScaffoldPlan,
+};
+use std::path::Path;
+
+pub trait LanguagePack: Send + Sync {
+    fn id(&self) -> &'static str;
+
+    /// Which files this pack owns.
+    fn matches_path(&self, path: &Path) -> bool;
+
+    /// Extract “used deps/symbols” from file content.
+    fn detect_usage(&self, content: &str) -> UsedSymbols;
+
+    /// Render the header (doc + notes + gates) using a plan.
+    fn render_header(&self, plan: &dyn HeaderPlan, report: &FileReport) -> String;
+
+    /// Insert/replace header block idempotently.
+    fn apply_header(&self, original: &str, header: &str) -> String;
+
+    /// Optional: generate scaffolding for a new file/module.
+    fn scaffold(&self, _plan: &dyn ScaffoldPlan, _req: ScaffoldRequest) -> Result<ScaffoldOutput> {
+        Err(PassengerError::Unsupported("scaffold not supported by this pack".into()))
+    }
+
+    // fn scaffold(&self, _kind: &str, _name: &str, _module_path: &[String]) -> Result<Vec<(std::path::PathBuf, String)>> {
+    //     Err(PassengerError::Unsupported("scaffold not supported by this pack".into()))
+    // }
+}
+
+
+#[cfg(feature = "lang_rust")]
+pub mod rust;
+
+pub fn get_pack(lang: &str) -> Result<Box<dyn LanguagePack>> {
+    match lang {
+        #[cfg(feature = "lang_rust")]
+        "rust" | "rs" => Ok(Box::new(rust::RustPack::default())),
+        _ => Err(PassengerError::Unsupported(format!("language pack '{lang}' not available"))),
+    }
+}
+// end of packs.rs
+
+// start of main.rs
+fn main() {
+    if let Err(e) = code_passenger::cli::run() {
+        eprintln!("{e}");
+        std::process::exit(1);
+    }
+}
+// end of main.rs
+
+// start of plans.rs
+use crate::error::{PassengerError, Result};
+use crate::model::{FeatureNote, FileReport, PlanSection};
+use std::collections::BTreeSet;
+
+pub trait HeaderPlan: Send + Sync {
+    fn id(&self) -> &'static str;
+
+    /// Rust rendering (pack supplies markers; plan decides sections + gate selection).
+    fn render_for_rust(&self, report: &FileReport, begin: &str, end: &str) -> String;
+}
+
+/// v2 plan metadata: section ordering + gate selection rules.
+/// (Doesn't replace HeaderPlan yet; it complements it.)
+pub trait HeaderPlanV2: Send + Sync {
+    fn id(&self) -> &'static str;
+
+    fn sections(&self) -> &[PlanSection];
+
+    fn select_gates(&self, notes: &[FeatureNote]) -> Vec<String> {
+        let mut set = BTreeSet::<String>::new();
+        for n in notes {
+            if n.corpus && n.used_in_file {
+                set.insert(n.feature_name.clone());
+            }
+        }
+        set.into_iter().collect()
+    }
+}
+
+#[cfg(feature = "plan_verbose")]
+pub mod verbose;
+#[cfg(feature = "plan_compact")]
+pub mod compact;
+
+pub fn get_plan(plan: &str) -> Result<Box<dyn HeaderPlan>> {
+    match plan {
+        #[cfg(feature = "plan_verbose")]
+        "verbose" => Ok(Box::new(verbose::VerbosePlan)),
+        #[cfg(feature = "plan_compact")]
+        "compact" => Ok(Box::new(compact::CompactPlan)),
+        _ => Err(PassengerError::Unsupported(format!("header plan '{plan}' not available"))),
+    }
+}
+// end of plans.rs
+
+// start of model.rs
+use serde::{Deserialize, Serialize};
+use std::collections::{BTreeMap, BTreeSet};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ManifestInfo {
+    pub crate_name: String,
+    /// feature -> raw members (strings) as in Cargo.toml
+    pub features_raw: BTreeMap<String, Vec<String>>,
+    /// all dependency keys (normalized: '-' -> '_')
+    pub all_deps: BTreeSet<String>,
+    /// optional dependency keys (as used in code: '-' normalized to '_')
+    pub optional_deps: BTreeSet<String>,
+    /// feature -> enabled deps (subset of optional_deps), normalized to code idents
+    pub feature_deps: BTreeMap<String, BTreeSet<String>>,
+    /// dep -> features that enable it
+    pub dep_features: BTreeMap<String, BTreeSet<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DocumentDetails {
+    pub filename: String,
+    /// path relative to src root (e.g. "net/http.rs")
+    pub relative_path: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct UsedSymbols {
+    pub packages: std::collections::BTreeSet<String>, // deps like tokio, regex, serde_json
+    pub modules: std::collections::BTreeSet<String>,  // optional (crate::foo, std::fs, etc.)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FeatureNote {
+    pub feature_name: String,
+    pub deps: Vec<String>,
+    pub scope: Vec<String>,
+    pub corpus: bool,
+    pub used_in_file: bool,
+}
+
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum UseKind {
+    UseStmt,       // `use dep::foo`
+    ExternCrate,   // `extern crate dep;`
+    Attribute,     // `#[dep::something]`
+    MacroCall,     // `dep::foo!()`
+    Path,          // everything else `dep::foo::bar`
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UseSite {
+    pub dep: String,     // "regex"
+    pub path: String,    // "regex::RegexSet"
+    pub head: String,    // "RegexSet" (first segment after dep::)
+    pub kind: UseKind,
+    pub line: usize,     // 1-based
+    pub scope: String,   // "fn run" / "impl Foo" / "file"
+}
+
+pub type UseSites = BTreeMap<String, BTreeMap<String, usize>>;
+pub type UseSitesCount = UseSites;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FileReport {
+    pub document: DocumentDetails,
+    pub used: UsedSymbols,
+    pub notes: Vec<FeatureNote>,
+    pub corpus_features: Vec<String>,
+
+    // NEW
+    // pub use_sites: Vec<UseSite>,
+    // pub external_use_sites: UseSites,
+    pub external_use_sites: Vec<UseSite>,
+    // pub internal_use_sites: UseSites,
+    pub internal_use_sites: Vec<UseSite>,
+
+    pub external_dep_symbol_counts: UseSitesCount,
+    pub internal_dep_symbol_counts: UseSitesCount,
+
+}
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct FileReport {
+//     pub document: DocumentDetails,
+//     pub used: UsedSymbols,
+//     pub notes: Vec<FeatureNote>,
+//     pub corpus_features: Vec<String>,
+// 
+//     // NEW:
+//     pub use_sites: Vec<UseSite>,
+// 
+//     // NEW: dep -> symbol(head) -> count
+//     pub dep_symbol_counts: std::collections::BTreeMap<String, std::collections::BTreeMap<String, usize>>,
+// }
+
+// #[derive(Debug, Clone, Serialize, Deserialize)]
+// pub struct FileReport {
+//     pub document: DocumentDetails,
+//     pub used: UsedSymbols,
+//     pub notes: Vec<FeatureNote>,
+//     pub corpus_features: Vec<String>,
+// }
+
+#[derive(Debug, Clone, Copy)]
+pub enum PlanSection {
+    DocumentDetails,
+    FeatureNotes,
+    CorpusGates,
+    Custom(&'static str),
+}
+
+
+
+#[derive(Debug, Clone, Copy)]
+pub enum ScaffoldKind {
+    Module,
+    Component,
+    Service,
+    Test,
+}
+
+impl ScaffoldKind {
+    pub fn parse(s: &str) -> Option<Self> {
+        match s.trim().to_lowercase().as_str() {
+            "module" => Some(Self::Module),
+            "component" => Some(Self::Component),
+            "service" => Some(Self::Service),
+            "test" => Some(Self::Test),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ScaffoldRequest {
+    pub kind: ScaffoldKind,
+    pub name: String,                 // e.g. "thread_pool_manager"
+    pub module_path: Vec<String>,      // e.g. ["net", "http"]
+}
+
+
+#[derive(Debug, Clone)]
+pub struct ScaffoldOutput {
+    pub files: Vec<(std::path::PathBuf, String)>, // path + content
+}
+impl ScaffoldOutput {
+    pub fn unsupported() -> Self { Self { files: vec![] } }
+}
+
+// end of model.rs
+
+// start of cli.rs
+use crate::analysis::run as r;
+use crate::engine::{RunContext, run_scan};
+use crate::error::{Result, PassengerError};
+use crate::{packs, plans};
+use clap::{Parser, Subcommand};
+use std::fs;
+use std::path::PathBuf;
+
+#[derive(Debug, Parser)]
+#[command(name = "code-passenger")]
+#[command(about = "Scan a Rust crate for feature/dependency usage and generate feature gating headers.", long_about = None)]
+pub struct Cli {
+    /// Path to crate root (where Cargo.toml lives)
+    #[arg(long, default_value = ".")]
+    pub root: PathBuf,
+
+    /// Relative source directory to scan
+    #[arg(long, default_value = "src")]
+    pub src: String,
+
+    /// Manifest path (defaults to {root}/Cargo.toml)
+    #[arg(long)]
+    pub manifest: Option<PathBuf>,
+
+    #[arg(long, default_value="rust")]
+    pub lang: String,
+
+    #[arg(long, default_value="verbose")]
+    pub plan: String,
+
+    /// Emit JSON instead of human output
+    #[arg(long)]
+    pub json: bool,
+
+    #[command(subcommand)]
+    pub cmd: Command,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum Command {
+    /// Scan and print reports
+    Scan,
+    /// Annotate files (insert/replace header blocks)
+    Annotate {
+        /// Actually write changes (otherwise dry-run)
+        #[arg(long)]
+        write: bool,
+
+        /// Exit non-zero if changes would be made (CI mode)
+        #[arg(long)]
+        check: bool,
+    },
+    Scaffold {
+        #[arg(long)]
+        kind: String, // "module" etc
+
+        #[arg(long)]
+        name: String,
+
+        /// like "net/http"
+        #[arg(long, default_value="")]
+        path: String,
+
+        #[arg(long, default_value="default")]
+        scaffold_plan: String,
+
+        #[arg(long)]
+        write: bool,
+    }
+}
+
+pub fn run() -> Result<()> {
+    let cli = Cli::parse();
+    let manifest_path = cli.manifest.clone().unwrap_or_else(|| cli.root.join("Cargo.toml"));
+
+    let ctx = RunContext {
+        root: cli.root.clone(),
+        src_rel: cli.src.clone(),
+        manifest_path,
+        lang: cli.lang.clone(),
+    };
+
+    match cli.cmd {
+        Command::Scan => {
+            let out = run_scan(&ctx)?;
+            if cli.json {
+                // println!("{}", serde_json::to_string_pretty(&out.reports).unwrap());
+                
+                let a = r(&out);
+                let file = std::fs::File::create("report.json")?;
+                let writer = std::io::BufWriter::new(file);
+
+                let _ = serde_json::to_writer_pretty(writer, &a);
+                println!("Saved report to report.json");
+            } else {
+                let top_n = 5;
+
+                for r in &out.reports {
+                    println!("== {} ==", r.document.relative_path);
+
+                    print_set("used_deps", &r.used.packages);   // or r.used.packages
+                    print_set("used_mods", &r.used.modules);    // or r.used.modules
+                    print_set("corpus_features", &r.corpus_features);
+
+                    // Optional: quick totals
+                    println!(
+                        "use_sites: external={}, internal={}",
+                        r.external_use_sites.len(),
+                        r.internal_use_sites.len()
+                    );
+
+                    print_counts("external_symbols", &r.external_dep_symbol_counts, top_n);
+                    print_counts("internal_symbols", &r.internal_dep_symbol_counts, top_n);
+
+                    println!();
+                }
+            }
+        },
+
+        Command::Annotate { write, check } => {
+            let out = run_scan(&ctx)?;
+            let pack = packs::get_pack(&cli.lang)?;
+            let plan = plans::get_plan(&cli.plan)?;
+
+            let mut changed_any = false;
+
+            for r in &out.reports {
+                let header = pack.render_header(plan.as_ref(), r);
+
+                let file_path = cli.root.join(&cli.src).join(&r.document.relative_path);
+                let original = fs::read_to_string(&file_path)?;
+                let updated = pack.apply_header(&original, &header);
+
+                if updated != original {
+                    changed_any = true;
+                    if write {
+                        fs::write(&file_path, updated)?;
+                    }
+                }
+            }
+
+            if check && changed_any {
+                return Err(PassengerError::ChangesNeeded);
+            }
+        },
+
+        Command::Scaffold { kind, name, path, scaffold_plan, write } => {
+            let pack = packs::get_pack(&cli.lang)?;
+            let plan = crate::scaffolds::get_scaffold_plan(&scaffold_plan)?;
+
+            let kind = crate::model::ScaffoldKind::parse(&kind)
+                .ok_or_else(|| PassengerError::Unsupported(format!("unknown scaffold kind '{kind}'")))?;
+
+            let module_path: Vec<String> = path
+                .split('/')
+                .filter(|s| !s.is_empty())
+                .map(|s| s.to_string())
+                .collect();
+
+            let out = pack.scaffold(
+                plan.as_ref(),
+                crate::model::ScaffoldRequest { kind, name, module_path }
+            )?;
+
+            if out.files.is_empty() {
+                return Err(PassengerError::Unsupported("scaffold produced no files".into()));
+            }
+
+            for (rel, content) in out.files {
+                let abs = cli.root.join(rel);
+                if write {
+                    if let Some(parent) = abs.parent() {
+                        fs::create_dir_all(parent)?;
+                    }
+                    fs::write(&abs, content)?;
+                } else {
+                    println!("--- {}", abs.display());
+                    println!("{content}");
+                }
+            }
+        }
+
+    }
+
+    Ok(())
+}
+
+
+use std::collections::BTreeMap;
+
+fn preview_syms(syms: &BTreeMap<String, usize>, top_n: usize) -> String {
+    let mut v: Vec<(&String, &usize)> = syms.iter().collect();
+    v.sort_by(|(ka, ca), (kb, cb)| {
+        // count desc, then name asc
+        cb.cmp(ca).then_with(|| ka.cmp(kb))
+    });
+
+    v.into_iter()
+        .take(top_n)
+        .map(|(k, c)| format!("{k}({c})"))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
+fn print_counts(
+    title: &str,
+    counts: &BTreeMap<String, BTreeMap<String, usize>>,
+    top_n: usize,
+) {
+    if counts.is_empty() {
+        return;
+    }
+
+    println!("{title}:");
+    for (dep, syms) in counts {
+        if syms.is_empty() { continue; }
+        let preview = preview_syms(syms, top_n);
+        if preview.is_empty() { continue; }
+        println!("  {dep}: {preview}");
+    }
+}
+
+fn print_set<T: std::fmt::Debug>(label: &str, set: &T) {
+    println!("{label}: {set:?}");
+}
+// end of cli.rs
+
+// start of engine.rs
+use crate::{
+    cargo::load_manifest,
+    error::{PassengerError, Result},
+    model::{DocumentDetails, FeatureNote, FileReport, ManifestInfo, UsedSymbols},
+    packs,
+};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fs,
+    path::{Path, PathBuf},
+};
+use walkdir::WalkDir;
+
+fn rel_to_src(src_root: &Path, p: &Path) -> Result<String> {
+    let rel = p.strip_prefix(src_root)
+        .map_err(|e| PassengerError::Path(e.to_string()))?;
+    Ok(rel.to_string_lossy().to_string())
+}
+
+// very pragmatic “scope notes”
+fn scope_label_from_header(header: &str) -> Option<String> {
+    let h = header.trim();
+
+    if let Some(idx) = h.find("fn ") {
+        let after = &h[idx + 3..];
+        let name: String = after
+            .chars()
+            .skip_while(|c| c.is_whitespace())
+            .take_while(|c| c.is_alphanumeric() || *c == '_')
+            .collect();
+        if !name.is_empty() { return Some(format!("fn {name}")); }
+    }
+
+    if h.contains("impl ") {
+        let preview = h.replace('\n', " ");
+        let preview = preview.split('{').next().unwrap_or(&preview);
+        let preview = preview.split(" where ").next().unwrap_or(preview);
+        let preview = preview.trim();
+        if let Some(rest) = preview.strip_prefix("impl ") {
+            return Some(format!("impl {}", rest.trim()));
+        }
+        return Some(format!("impl {}", preview));
+    }
+
+    for kw in ["mod", "trait", "struct", "enum"] {
+        if let Some(idx) = h.find(&format!("{kw} ")) {
+            let after = &h[idx + kw.len() + 1..];
+            let name: String = after
+                .chars()
+                .skip_while(|c| c.is_whitespace())
+                .take_while(|c| c.is_alphanumeric() || *c == '_')
+                .collect();
+            if !name.is_empty() { return Some(format!("{kw} {name}")); }
+        }
+    }
+
+    None
+}
+
+fn compute_dep_scopes(content: &str, used_deps: &BTreeSet<String>) -> BTreeMap<String, BTreeSet<String>> {
+    let mut dep_scopes: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for d in used_deps {
+        dep_scopes.insert(d.clone(), BTreeSet::new());
+    }
+
+    let mut depth: usize = 0;
+    let mut stack: Vec<(String, usize)> = vec![];
+    let mut header_buf: Vec<String> = vec![];
+
+    for line in content.lines() {
+        let trimmed = line.trim();
+
+        // record dep hits
+        for dep in used_deps {
+            if trimmed.contains(&format!("{dep}::")) || trimmed.contains(&format!("::{dep}::")) || trimmed.contains(&format!("#[{dep}::")) {
+                let scope = stack.last().map(|s| s.0.clone()).unwrap_or_else(|| "file".to_string());
+                dep_scopes.get_mut(dep).unwrap().insert(scope);
+            }
+        }
+
+        if !trimmed.is_empty() {
+            header_buf.push(line.to_string());
+            if header_buf.len() > 10 { header_buf.remove(0); }
+        }
+
+        let opens = line.chars().filter(|c| *c == '{').count();
+        let closes = line.chars().filter(|c| *c == '}').count();
+
+        if opens > 0 {
+            let header = header_buf.join("\n");
+            if let Some(label) = scope_label_from_header(&header) {
+                stack.push((label, depth + 1));
+            }
+        }
+
+        depth += opens;
+        for _ in 0..closes {
+            if depth == 0 { break; }
+            if let Some(top) = stack.last() {
+                if top.1 == depth {
+                    stack.pop();
+                }
+            }
+            depth -= 1;
+        }
+    }
+
+    dep_scopes
+}
+
+pub struct RunContext {
+    pub root: PathBuf,
+    pub src_rel: String,
+    pub manifest_path: PathBuf,
+    pub lang: String,
+}
+
+pub struct EngineOutput {
+    pub manifest: ManifestInfo,
+    pub reports: Vec<FileReport>,
+}
+
+pub fn run_scan(ctx: &RunContext) -> Result<EngineOutput> {
+    let manifest = load_manifest(ctx.manifest_path.to_str().ok_or_else(|| PassengerError::Path("bad manifest path".into()))?)?;
+    let src_root = ctx.root.join(&ctx.src_rel);
+
+    let mut reports = Vec::new();
+
+    // currently only Rust pack uses optional_deps-aware detection
+    let pack = packs::get_pack(&ctx.lang)?;
+
+    for ent in WalkDir::new(&src_root).into_iter().filter_map(|e| e.ok()) {
+        if !ent.file_type().is_file() { continue; }
+        let path = ent.path();
+        if !pack.matches_path(path) { continue; }
+
+        let rel = rel_to_src(&src_root, path)?;
+        let filename = path.file_name().unwrap().to_string_lossy().to_string();
+
+        let content = fs::read_to_string(path)?;
+
+        let used: UsedSymbols = if ctx.lang == "rust" || ctx.lang == "rs" {
+            // usage depends on optional_deps list
+            #[cfg(feature="lang_rust")]
+            {
+                crate::packs::rust::detectors::detect_usage_with_deps(
+                    &content,
+                    &manifest.all_deps,
+                    &manifest.crate_name
+                )
+                // crate::packs::rust::detect_usage_with_optiona l_deps(&content, &manifest.optional_deps)
+            }
+            #[cfg(not(feature="lang_rust"))]
+            {
+                UsedSymbols::default()
+            }
+        } else {
+            pack.detect_usage(&content)
+        };
+
+        let external_use_sites = scan_dep_use_sites(&content, &used.packages);
+
+        let mut external_dep_symbol_counts: BTreeMap<String, BTreeMap<String, usize>> = BTreeMap::new();
+        for u in &external_use_sites {
+            external_dep_symbol_counts
+                .entry(u.dep.clone()).or_default()
+                .entry(u.head.clone()).and_modify(|c| *c += 1)
+                .or_insert(1);
+        }
+
+        let internal_use_sites = scan_internal_use_sites(&content, &manifest.crate_name);
+
+        let mut internal_dep_symbol_counts: BTreeMap<String, BTreeMap<String, usize>> = BTreeMap::new();
+        for u in &internal_use_sites {
+            internal_dep_symbol_counts
+                .entry(u.dep.clone()).or_default()
+                .entry(u.head.clone()).and_modify(|c| *c += 1)
+                .or_insert(1);
+        }
+
+        let dep_scopes = compute_dep_scopes(&content, &used.packages);
+
+        // feature notes + corpus selection
+        let mut notes: Vec<FeatureNote> = vec![];
+        let mut corpus_features: BTreeSet<String> = BTreeSet::new();
+
+        // corpus heuristic: features that actually gate optional deps OR known “platform features”
+        let corpus_name_whitelist: BTreeSet<&'static str> =
+            ["std", "alloc", "no_std"].into_iter().collect();
+
+        for (feat, deps) in &manifest.feature_deps {
+            let deps_vec: Vec<String> = deps.iter().cloned().collect();
+            let used_in_file = deps.iter().any(|d| used.packages.contains(d));
+
+            // union scopes of deps
+            let mut scopes = BTreeSet::<String>::new();
+            for d in deps {
+                if let Some(s) = dep_scopes.get(d) {
+                    scopes.extend(s.iter().cloned());
+                }
+            }
+
+            let corpus = !deps.is_empty() || corpus_name_whitelist.contains(feat.as_str());
+
+            if corpus && used_in_file {
+                corpus_features.insert(feat.clone());
+            }
+
+            notes.push(FeatureNote {
+                feature_name: feat.clone(),
+                deps: deps_vec,
+                scope: scopes.into_iter().collect(),
+                corpus,
+                used_in_file,
+            });
+        }
+
+        reports.push(FileReport {
+            document: DocumentDetails { filename, relative_path: rel },
+            used,
+            notes,
+            corpus_features: corpus_features.into_iter().collect(),
+            internal_use_sites,
+            internal_dep_symbol_counts,
+            external_use_sites,
+            external_dep_symbol_counts
+        });
+    }
+
+    Ok(EngineOutput { manifest, reports })
+}
+
+
+
+
+
+
+
+
+
+
+use regex::Regex;
+
+fn scan_dep_use_sites(
+    content: &str,
+    used_deps: &std::collections::BTreeSet<String>,
+) -> Vec<crate::model::UseSite> {
+    use crate::model::{UseKind, UseSite};
+
+    // Matches: ::dep::a::b   or dep::a::b  (with optional whitespace around ::)
+    // Captures dep + tail; tail is 1+ ident segments separated by ::
+    let re = Regex::new(
+        r#"(?x)
+        (?P<global>::\s*)?
+        (?P<dep>[A-Za-z_][A-Za-z0-9_]*)
+        \s*::\s*
+        (?P<tail>[A-Za-z_][A-Za-z0-9_]*(?:\s*::\s*[A-Za-z_][A-Za-z0-9_]*)*)
+        (?P<bang>\s*!)?
+        "#
+    ).expect("valid regex");
+
+    // Reuse your scope stack logic (same idea as compute_dep_scopes)
+    let mut depth: usize = 0;
+    let mut stack: Vec<(String, usize)> = vec![];
+    let mut header_buf: Vec<String> = vec![];
+
+    let mut out: Vec<UseSite> = vec![];
+
+    for (idx0, line) in content.lines().enumerate() {
+        let line_no = idx0 + 1;
+        let trimmed = line.trim();
+
+        // keep rolling header buffer
+        if !trimmed.is_empty() {
+            header_buf.push(line.to_string());
+            if header_buf.len() > 10 { header_buf.remove(0); }
+        }
+
+        // detect scope opens before we record matches (so uses on same line get correct scope after `{`)
+        let opens = line.chars().filter(|c| *c == '{').count();
+        if opens > 0 {
+            let header = header_buf.join("\n");
+            if let Some(label) = crate::engine::scope_label_from_header(&header) {
+                stack.push((label, depth + 1));
+            }
+        }
+
+        let scope = stack.last().map(|s| s.0.clone()).unwrap_or_else(|| "file".to_string());
+
+        // classify “kind” by line context
+        let kind_hint = if trimmed.starts_with("use ") {
+            Some(UseKind::UseStmt)
+        } else if trimmed.starts_with("extern crate ") {
+            Some(UseKind::ExternCrate)
+        } else if trimmed.contains("#[") {
+            Some(UseKind::Attribute)
+        } else {
+            None
+        };
+
+        for caps in re.captures_iter(line) {
+            let dep = caps.name("dep").unwrap().as_str().to_string();
+            if !used_deps.contains(&dep) { continue; }
+
+            let tail_raw = caps.name("tail").unwrap().as_str();
+            let bang = caps.name("bang").is_some();
+
+            // normalize tail spacing: "a :: b" -> "a::b"
+            let tail = tail_raw.split_whitespace().collect::<String>().replace("::", "::");
+
+            // head = first segment after dep::
+            let head = tail.split("::").next().unwrap_or("").to_string();
+            let path = format!("{dep}::{tail}");
+
+            let kind = if let Some(k) = kind_hint.clone() {
+                // if line is `use ...` etc, keep that (most useful)
+                k
+            } else if bang {
+                UseKind::MacroCall
+            } else {
+                UseKind::Path
+            };
+
+            out.push(UseSite {
+                dep,
+                path,
+                head,
+                kind,
+                line: line_no,
+                scope: scope.clone(),
+            });
+        }
+
+        // now update depth and pop scopes on closes
+        let closes = line.chars().filter(|c| *c == '}').count();
+        depth += opens;
+        for _ in 0..closes {
+            if depth == 0 { break; }
+            if let Some(top) = stack.last() {
+                if top.1 == depth {
+                    stack.pop();
+                }
+            }
+            depth -= 1;
+        }
+    }
+
+    out
+}
+
+
+fn crate_ident(crate_name: &str) -> String {
+    crate_name.replace('-', "_")
+}
+
+
+/// Internal roots we want to treat as “internal deps”:
+/// - crate::...
+/// - self::...
+/// - super::...
+/// - <crate_name>::...
+fn scan_internal_use_sites(content: &str, crate_name: &str) -> Vec<crate::model::UseSite> {
+    use crate::model::{UseKind, UseSite};
+    use regex::Regex;
+
+    let crate_id = crate_ident(crate_name);
+
+    // Matches: ::crate::a::b  or crate::a::b (and same for self/super/<crate_id>)
+    // Captures root + tail (1+ segments), optional bang for macros.
+    let re = Regex::new(&format!(
+        r#"(?x)
+        (?P<global>::\s*)?
+        (?P<root>\bcrate\b|\bself\b|\bsuper\b|\b{}\b)
+        \s*::\s*
+        (?P<tail>[A-Za-z_][A-Za-z0-9_]*(?:\s*::\s*[A-Za-z_][A-Za-z0-9_]*)*)
+        (?P<bang>\s*!)?
+        "#,
+        regex::escape(&crate_id)
+    ))
+    .expect("valid regex");
+
+    // same scope tracking approach as scan_dep_use_sites
+    let mut depth: usize = 0;
+    let mut stack: Vec<(String, usize)> = vec![];
+    let mut header_buf: Vec<String> = vec![];
+
+    let mut out: Vec<UseSite> = vec![];
+
+    for (idx0, line) in content.lines().enumerate() {
+        let line_no = idx0 + 1;
+        let trimmed = line.trim();
+
+        if !trimmed.is_empty() {
+            header_buf.push(line.to_string());
+            if header_buf.len() > 10 { header_buf.remove(0); }
+        }
+
+        let opens = line.chars().filter(|c| *c == '{').count();
+        if opens > 0 {
+            let header = header_buf.join("\n");
+            if let Some(label) = scope_label_from_header(&header) {
+                stack.push((label, depth + 1));
+            }
+        }
+
+        let scope = stack.last().map(|s| s.0.clone()).unwrap_or_else(|| "file".to_string());
+
+        let kind_hint = if trimmed.starts_with("use ") {
+            Some(UseKind::UseStmt)
+        } else if trimmed.starts_with("extern crate ") {
+            Some(UseKind::ExternCrate)
+        } else if trimmed.contains("#[") {
+            Some(UseKind::Attribute)
+        } else {
+            None
+        };
+
+        for caps in re.captures_iter(line) {
+            let dep = caps.name("root").unwrap().as_str().to_string();
+
+            let tail_raw = caps.name("tail").unwrap().as_str();
+            let bang = caps.name("bang").is_some();
+
+            // normalize: remove whitespace inside tail (so "foo :: bar" => "foo::bar")
+            let tail = tail_raw.split_whitespace().collect::<String>();
+
+            let head = tail.split("::").next().unwrap_or("").to_string();
+            let path = format!("{dep}::{tail}");
+
+            let kind = if let Some(k) = kind_hint.clone() {
+                k
+            } else if bang {
+                UseKind::MacroCall
+            } else {
+                UseKind::Path
+            };
+
+            out.push(UseSite {
+                dep,
+                path,
+                head,
+                kind,
+                line: line_no,
+                scope: scope.clone(),
+            });
+        }
+
+        let closes = line.chars().filter(|c| *c == '}').count();
+        depth += opens;
+        for _ in 0..closes {
+            if depth == 0 { break; }
+            if let Some(top) = stack.last() {
+                if top.1 == depth {
+                    stack.pop();
+                }
+            }
+            depth -= 1;
+        }
+    }
+
+    out
+}
+// end of engine.rs
+

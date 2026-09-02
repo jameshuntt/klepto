@@ -1,0 +1,686 @@
+{
+  "phase": "Done",
+  "files": {
+    "analysis.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "engine": 1
+        }
+      }
+    },
+    "analysis/action.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 1,
+          "Serialize": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "super": {
+          "state": 3
+        }
+      }
+    },
+    "analysis/checks.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "engine": 1
+        },
+        "super": {
+          "action": 1,
+          "state": 3
+        }
+      }
+    },
+    "analysis/lens.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "analysis/passes.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "engine": 1
+        },
+        "super": {
+          "BuildFileViews": 1,
+          "BuildTotals": 1,
+          "action": 1,
+          "state": 1
+        }
+      }
+    },
+    "analysis/passes/build_file_view.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "im": {
+          "OrdMap": 1,
+          "OrdSet": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 5,
+          "engine": 1,
+          "model": 1
+        }
+      }
+    },
+    "analysis/passes/build_totals.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 4,
+          "engine": 1
+        }
+      }
+    },
+    "analysis/produce.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "analysis/reducer.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "super": {
+          "action": 1,
+          "state": 1
+        }
+      }
+    },
+    "analysis/state.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "im": {
+          "OrdMap": 1,
+          "OrdSet": 1
+        },
+        "serde": {
+          "Deserialize": 1,
+          "Serialize": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    },
+    "analysis/store.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "super": {
+          "action": 1,
+          "produce": 1,
+          "reducer": 1,
+          "state": 1
+        }
+      }
+    },
+    "cargo.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "toml_edit": {
+          "DocumentMut": 1,
+          "TableLike": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "error": 2,
+          "model": 1
+        }
+      }
+    },
+    "cli.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "clap": {
+          "Parser": 1,
+          "Subcommand": 1
+        },
+        "serde_json": {
+          "to_writer_pretty": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 1,
+          "engine": 2,
+          "error": 2,
+          "model": 2,
+          "packs": 1,
+          "passenger": 2,
+          "plans": 1,
+          "scaffolds": 1
+        }
+      }
+    },
+    "engine.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "klepto": {
+          "Klepto": 1,
+          "UseSite": 3
+        },
+        "serde": {
+          "Deserialize": 1,
+          "Serialize": 1
+        },
+        "walkdir": {
+          "WalkDir": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "cargo": 1,
+          "error": 2,
+          "model": 5,
+          "packs": 2
+        }
+      }
+    },
+    "error.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "klepto": {
+          "KleptoError": 2
+        },
+        "serde_json": {
+          "Error": 1
+        },
+        "thiserror": {
+          "Error": 1
+        },
+        "toml": {
+          "de": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    },
+    "lib.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "main.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "code_passenger": {
+          "cli": 1
+        }
+      }
+    },
+    "model.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "klepto": {
+          "UseSite": 1,
+          "UseSitesCount": 1
+        },
+        "serde": {
+          "Deserialize": 1,
+          "Serialize": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    },
+    "packs.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "error": 2,
+          "model": 4,
+          "plans": 1,
+          "scaffolds": 1
+        }
+      }
+    },
+    "packs/rust.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "regex": {
+          "RegexSet": 1,
+          "escape": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "error": 1,
+          "model": 5,
+          "packs": 1,
+          "plans": 1,
+          "scaffolds": 1
+        },
+        "super": {
+          "LanguagePack": 1
+        }
+      }
+    },
+    "packs/rust/detectors.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "regex": {
+          "Regex": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "model": 1,
+          "packs": 2
+        }
+      }
+    },
+    "packs/rust/helpers.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "passenger/command.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "serde_json": {
+          "to_value": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "analysis": 1,
+          "engine": 2,
+          "error": 1,
+          "passenger": 2
+        }
+      }
+    },
+    "passenger/mod.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "passenger/store.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "chrono": {
+          "Utc": 1
+        },
+        "hex": {
+          "encode": 2
+        },
+        "serde": {
+          "Deserialize": 2,
+          "Serialize": 2
+        },
+        "serde_json": {
+          "Value": 1,
+          "from_slice": 1,
+          "to_vec": 1,
+          "to_vec_pretty": 1
+        },
+        "sha2": {
+          "Digest": 1,
+          "Sha256": 1
+        },
+        "similar": {
+          "ChangeTag": 3
+        },
+        "toml": {
+          "from_str": 1,
+          "to_string_pretty": 1
+        },
+        "walkdir": {
+          "WalkDir": 1
+        },
+        "zstd": {
+          "decode_all": 1,
+          "encode_all": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "engine": 1,
+          "error": 4
+        },
+        "super": {
+          "types": 1
+        }
+      }
+    },
+    "passenger/types.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "chrono": {
+          "Utc": 1
+        },
+        "serde": {
+          "Deserialize": 1,
+          "Serialize": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    },
+    "plans.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "error": 2,
+          "model": 3
+        }
+      }
+    },
+    "plans/compact.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "model": 2
+        },
+        "super": {
+          "HeaderPlan": 1,
+          "HeaderPlanV2": 1
+        }
+      }
+    },
+    "plans/verbose.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "model": 2
+        },
+        "super": {
+          "HeaderPlan": 1,
+          "HeaderPlanV2": 1
+        }
+      }
+    },
+    "scaffolds.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "error": 2,
+          "model": 1
+        }
+      }
+    },
+    "scanning.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "scanning/helpers.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "klepto": {
+          "FileLocation": 1,
+          "UseSite": 1,
+          "UseSiteKind": 1
+        },
+        "regex": {
+          "Regex": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "engine": 1,
+          "scanning": 1
+        }
+      }
+    },
+    "scanning/patterns.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "regex": {
+          "Regex": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    }
+  },
+  "crate_totals": {
+    "external_dep_hits": {
+      "chrono": 2,
+      "clap": 2,
+      "hex": 2,
+      "im": 4,
+      "klepto": 11,
+      "regex": 5,
+      "serde": 14,
+      "serde_json": 7,
+      "sha2": 2,
+      "similar": 3,
+      "thiserror": 1,
+      "toml": 3,
+      "toml_edit": 2,
+      "walkdir": 2,
+      "zstd": 2
+    },
+    "internal_root_hits": {
+      "code_passenger": 1,
+      "crate": 85,
+      "super": 23
+    },
+    "external_head_hits": {},
+    "internal_head_hits": {},
+    "top_external_symbols": {
+      "chrono": [
+        [
+          "Utc",
+          2
+        ]
+      ],
+      "clap": [
+        [
+          "Parser",
+          1
+        ],
+        [
+          "Subcommand",
+          1
+        ]
+      ],
+      "hex": [
+        [
+          "encode",
+          2
+        ]
+      ],
+      "im": [
+        [
+          "OrdMap",
+          2
+        ],
+        [
+          "OrdSet",
+          2
+        ]
+      ],
+      "klepto": [
+        [
+          "UseSite",
+          5
+        ],
+        [
+          "KleptoError",
+          2
+        ],
+        [
+          "FileLocation",
+          1
+        ],
+        [
+          "Klepto",
+          1
+        ],
+        [
+          "UseSiteKind",
+          1
+        ],
+        [
+          "UseSitesCount",
+          1
+        ]
+      ],
+      "regex": [
+        [
+          "Regex",
+          3
+        ],
+        [
+          "RegexSet",
+          1
+        ],
+        [
+          "escape",
+          1
+        ]
+      ],
+      "serde": [
+        [
+          "Deserialize",
+          7
+        ],
+        [
+          "Serialize",
+          7
+        ]
+      ],
+      "serde_json": [
+        [
+          "Error",
+          1
+        ],
+        [
+          "Value",
+          1
+        ],
+        [
+          "from_slice",
+          1
+        ],
+        [
+          "to_value",
+          1
+        ],
+        [
+          "to_vec",
+          1
+        ],
+        [
+          "to_vec_pretty",
+          1
+        ],
+        [
+          "to_writer_pretty",
+          1
+        ]
+      ],
+      "sha2": [
+        [
+          "Digest",
+          1
+        ],
+        [
+          "Sha256",
+          1
+        ]
+      ],
+      "similar": [
+        [
+          "ChangeTag",
+          3
+        ]
+      ],
+      "thiserror": [
+        [
+          "Error",
+          1
+        ]
+      ],
+      "toml": [
+        [
+          "de",
+          1
+        ],
+        [
+          "from_str",
+          1
+        ],
+        [
+          "to_string_pretty",
+          1
+        ]
+      ],
+      "toml_edit": [
+        [
+          "DocumentMut",
+          1
+        ],
+        [
+          "TableLike",
+          1
+        ]
+      ],
+      "walkdir": [
+        [
+          "WalkDir",
+          2
+        ]
+      ],
+      "zstd": [
+        [
+          "decode_all",
+          1
+        ],
+        [
+          "encode_all",
+          1
+        ]
+      ]
+    }
+  },
+  "findings": []
+}
