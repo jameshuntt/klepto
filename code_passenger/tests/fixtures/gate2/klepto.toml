@@ -1,6 +1,0 @@
-[app]
-optional = ["beta"]
-default = []
-
-[app.features]
-b = ["dep:beta"]
