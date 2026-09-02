@@ -9,7 +9,7 @@ description = "Rust source extraction on syn: imports, functions, macro/path/cal
 keywords = ["syn", "ast", "static-analysis", "workspace", "dependencies"]
 categories = ["development-tools"]
 
-authors = ["James Hunt <jameshuntdevelopment@gmail.com>"]
+authors = ["James Hunt <james@1o.business>"]
 repository = "https://github.com/jameshuntt/klepto"
 
 include = ["src/**", "Cargo.toml", "LICENSE*", "README*"]
