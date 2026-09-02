@@ -1,13 +1,13 @@
-use crate::cfg::CfgPredicate;
-use crate::extract::*;
-use crate::features::FeatureModel;
-use crate::find::Finder;
+use crate::resolve::cfg::CfgPredicate;
+use crate::syntax::extract::*;
+use crate::resolve::features::FeatureModel;
+use crate::syntax::find::Finder;
 use crate::graph::ItemGraph;
 use crate::model::*;
-use crate::query::*;
+use crate::syntax::query::*;
 use crate::resolve::PackageRoot;
 use crate::rules::*;
-use crate::snapshot::*;
+use crate::syntax::snapshot::*;
 
 use cargo_metadata::MetadataCommand;
 use globset::{Glob, GlobBuilder, GlobSet};
@@ -40,7 +40,7 @@ pub struct ParsedFile {
     pub ast: syn::File,
     pub is_no_std_crate_root: bool,
     /// Canonical path of the module this file holds (`app::query`), filled
-    /// by the module tree (rules M1–M5).
+    /// by the module tree.
     pub module: Option<String>,
 }
 
@@ -48,7 +48,7 @@ pub struct ParsedFile {
 pub struct Klepto {
     pub crate_name: String,
     /// The scanned root (`scan_workspace_root` / `scan_in_folder`), used by
-    /// the Phase 6 receipt to make every path relative; `None` for `scan_file`.
+    /// the receipt to make every path relative; `None` for `scan_file`.
     pub root: Option<PathBuf>,
     pub files: Vec<ParsedFile>,
 
@@ -63,41 +63,41 @@ pub struct Klepto {
     pub calls: Vec<CallOccurrence>,
     pub attrs: Vec<AttrOccurrence>,
     pub extern_crates: Vec<ExternCrateOccurrence>,
-    /// Every item declaration of every kind (Phase 3).
+    /// Every item declaration of every kind.
     pub items: Vec<ItemDecl>,
-    /// Type records (Phase 5).
-    pub types: Vec<crate::types::TypeDecl>,
-    /// Impl records (Phase 5).
-    pub impls: Vec<crate::types::ImplDecl>,
+    /// Type records.
+    pub types: Vec<crate::typing::types::TypeDecl>,
+    /// Impl records.
+    pub impls: Vec<crate::typing::types::ImplDecl>,
 
     /// Module tree of every scanned package.
     pub modules: ModuleTree,
-    /// Item graph (Phase 3), built after resolution.
+    /// Item graph, built after resolution.
     pub graph: ItemGraph,
     /// Declared dependencies per package (names with `-` → `_`), from cargo
     /// metadata; empty for `scan_in_folder` / `scan_file`.
     pub package_deps: BTreeMap<String, BTreeSet<String>>,
-    /// Cargo feature model per scanned package (Phase 2); empty for
+    /// Cargo feature model per scanned package; empty for
     /// `scan_in_folder` / `scan_file`.
     pub features: BTreeMap<String, FeatureModel>,
 
     pub no_std_detected: bool,
 
-    /// Phase 8: every macro invocation met while expanding, with its outcome
-    /// (rule X8); nothing is dropped silently.
-    pub expansions: Vec<crate::expand::Expansion>,
-    /// Phase 8: `macro_rules!` names klepto could expand, with their crate.
+    /// Every macro invocation met while expanding, with its outcome
+    ///; nothing is dropped silently.
+    pub expansions: Vec<crate::resolve::expand::Expansion>,
+    /// `macro_rules!` names klepto could expand, with their crate.
     pub macros_known: Vec<(String, String)>,
-    /// Phase 8: why dependency macros were not (fully) harvested, if so.
+    /// Why dependency macros were not (fully) harvested, if so.
     pub dep_macro_note: Option<String>,
 
-    pub index: crate::index::EnclosingIndex,
+    pub index: crate::syntax::index::EnclosingIndex,
 
     /// Files that failed to parse and were skipped because
     /// `ignore_parse_errors(true)` was set, with the parser's message.
     pub skipped_files: Vec<(PathBuf, String)>,
 
-    /// Single-identifier paths waiting for rule O1; drained by the resolver.
+    /// Single-identifier paths waiting for the resolver; drained by the resolver.
     pub(crate) pending_singles: Vec<PathOccurrence>,
 }
 
@@ -169,7 +169,7 @@ pub struct KleptoBuilder {
     package_roots: Vec<PackageRoot>,
     package_deps: BTreeMap<String, BTreeSet<String>>,
     features: BTreeMap<String, FeatureModel>,
-    /// Phase 8: `src` dirs of dependencies (name, dir) for `#[macro_export]`
+    /// `src` dirs of dependencies (name, dir) for `#[macro_export]`
     /// harvesting; empty when the lockfile cannot be resolved offline.
     dep_sources: Vec<(String, PathBuf)>,
     dep_macro_note: Option<String>,
@@ -214,7 +214,7 @@ impl KleptoBuilder {
         let manifest = root.join("Cargo.toml");
         let meta = MetadataCommand::new().manifest_path(manifest).no_deps().exec()?;
 
-        // Phase 8 (rule X2): dependency sources for `#[macro_export]` macros.
+        // Dependency sources for `#[macro_export]` macros.
         // `--frozen` so cargo never writes a lockfile into the scanned tree;
         // when that fails the reason is kept, not hidden.
         match MetadataCommand::new().manifest_path(root.join("Cargo.toml")).other_options(vec!["--frozen".to_string()]).exec() {
@@ -274,7 +274,7 @@ impl KleptoBuilder {
         }
 
         let scanned: Vec<String> = self.package_roots.iter().map(|r| r.package.clone()).collect();
-        self.features.extend(crate::features::build_feature_models(&meta, &scanned));
+        self.features.extend(crate::resolve::features::build_feature_models(&meta, &scanned));
 
         for m in members {
             if let Some(dir) = m.parent() {
@@ -325,7 +325,7 @@ impl KleptoBuilder {
     pub fn include_tests(mut self, yes: bool) -> Self { self.add_tests = yes; self }
     pub fn include_examples(mut self, yes: bool) -> Self { self.add_examples = yes; self }
     pub fn include_benches(mut self, yes: bool) -> Self { self.add_benches = yes; self }
-    /// Phase 8: do not read dependency sources for `#[macro_export]` macros.
+    /// Do not read dependency sources for `#[macro_export]` macros.
     pub fn skip_dependency_macros(mut self, yes: bool) -> Self { self.no_dep_macros = yes; self }
 
     pub fn parse(self) -> Result<Klepto, KleptoError> {
@@ -367,7 +367,7 @@ impl KleptoBuilder {
             }
         }
 
-        // Phase 8 (rules X1–X8): expand `macro_rules!` before anything reads
+        // Expand `macro_rules!` before anything reads
         // the ASTs, so generated items, mods and calls are ordinary ones.
         let crate_pkg = norm_crate_root(&self.crate_name);
         let root_dirs: Vec<(PathBuf, String)> =
@@ -380,7 +380,7 @@ impl KleptoBuilder {
                 .map(|(_, p)| p.clone())
                 .unwrap_or_else(|| crate_pkg.clone())
         };
-        let mut table = crate::expand::MacroTable::default();
+        let mut table = crate::resolve::expand::MacroTable::default();
         for pf in &files {
             table.harvest(&pf.ast, &package_of(&pf.path), false, &pf.path);
         }
@@ -406,7 +406,7 @@ impl KleptoBuilder {
                 }
             }
         }
-        // Rule X1: macros that expansions define (syn's `Token!` comes out of
+        // macros that expansions define (syn's `Token!` comes out of
         // another macro) are found by expanding again from the parsed files
         // until no new `macro_rules!` appears (at most four rounds).
         let originals: Vec<syn::File> = files.iter().map(|f| f.ast.clone()).collect();
@@ -419,7 +419,7 @@ impl KleptoBuilder {
                 }
                 let pkg = package_of(&pf.path);
                 let deps: Vec<String> = self.package_deps.get(&pkg).map(|d| d.iter().cloned().collect()).unwrap_or_default();
-                expansions.extend(crate::expand::expand_file(&mut pf.ast, &table, &pkg, deps, &pf.path));
+                expansions.extend(crate::resolve::expand::expand_file(&mut pf.ast, &table, &pkg, deps, &pf.path));
             }
             let before = table.len();
             for pf in &files {
@@ -450,7 +450,7 @@ impl KleptoBuilder {
         let mut impls = Vec::new();
 
         let mut no_std_detected = false;
-        let mut index = crate::index::EnclosingIndex::default();
+        let mut index = crate::syntax::index::EnclosingIndex::default();
 
         for pf in &files {
             if pf.is_no_std_crate_root { no_std_detected = true; }
@@ -479,7 +479,7 @@ impl KleptoBuilder {
             types.extend(occ.types);
             impls.extend(occ.impls);
 
-            index = index.merge(crate::index::EnclosingIndex::build(&package, &segs, &pf.path, &pf.ast));
+            index = index.merge(crate::syntax::index::EnclosingIndex::build(&package, &segs, &pf.path, &pf.ast));
         }
 
         classify_imports(&mut imports, &self.workspace_members, &self.dependency_crates);
@@ -513,8 +513,8 @@ impl KleptoBuilder {
             pending_singles,
         };
         crate::resolve::resolve_all(&mut k);
-        crate::types::resolve_types(&mut k);
-        crate::methods::resolve_method_calls(&mut k);
+        crate::typing::types::resolve_types(&mut k);
+        crate::typing::methods::resolve_method_calls(&mut k);
         k.graph = crate::graph::build_item_graph(&k);
         Ok(k)
     }

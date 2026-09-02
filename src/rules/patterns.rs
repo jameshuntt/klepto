@@ -1,4 +1,4 @@
-//! Phase 7 rules over the pattern report (rules R1–R2 in `PHASE7_RULES.md`).
+//! Rules over the pattern report.
 
 use crate::klepto::Klepto;
 use crate::model::{FileLocation, Finding, Severity};

@@ -1,7 +1,7 @@
-//! Phase 7: pattern mining — function shapes at five abstraction levels,
+//! Pattern mining — function shapes at five abstraction levels,
 //! clusters of same-shaped functions, the parameters that differ inside a
 //! cluster, candidate refactorings, impl-block mining and per-function
-//! metrics. Rules S1–S5, C1–C6, P1–P4, I1–I3, M1–M4 in `PHASE7_RULES.md`.
+//! metrics.
 //!
 //! klepto proposes, never rewrites. Mining needs the `span-locations`
 //! feature (default): tokens are classified by span, so without it only
@@ -11,7 +11,7 @@
 //! statements, renamed fields), clones inside macro bodies (macro
 //! arguments are opaque), cross-crate patterns, suggesting names.
 
-use crate::extract::path_string;
+use crate::syntax::extract::path_string;
 use crate::klepto::Klepto;
 use crate::model::{CapturedFn, FnKind, Resolution};
 use proc_macro2::{Delimiter, Spacing, Span, TokenStream, TokenTree};
@@ -22,7 +22,7 @@ use std::path::PathBuf;
 use syn::spanned::Spanned;
 use syn::visit::Visit;
 
-/// Abstraction levels, strictest first (rule S1).
+/// Abstraction levels, strictest first.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[serde(rename_all = "lowercase")]
 pub enum ShapeLevel {
@@ -65,9 +65,9 @@ impl ShapeLevel {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MiningOptions {
     /// Functions with fewer significant tokens in signature + body are not
-    /// shaped (rule S5).
+    /// shaped.
     pub min_tokens: usize,
-    /// Smallest cluster reported (rule C1).
+    /// Smallest cluster reported.
     pub min_members: usize,
 }
 
@@ -77,7 +77,7 @@ impl Default for MiningOptions {
     }
 }
 
-/// One placeholder and what it stands for in one function (rule S4).
+/// One placeholder and what it stands for in one function.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Slot {
     /// `$v0`, `$l0`, `$t0`, `$f0`.
@@ -86,7 +86,7 @@ pub struct Slot {
     pub filler: String,
 }
 
-/// A function's shapes at every level (rules S1–S4).
+/// A function's shapes at every level.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct FnShape {
     pub id: String,
@@ -107,7 +107,7 @@ pub enum ParamKind {
     Callee,
 }
 
-/// A slot whose fillers differ across a cluster's members (rule P1).
+/// A slot whose fillers differ across a cluster's members.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Param {
     pub kind: ParamKind,
@@ -124,7 +124,7 @@ pub struct Cluster {
     pub members: Vec<String>,
     /// The first member.
     pub exemplar: String,
-    /// No stricter level joins all these members (rule C2).
+    /// No stricter level joins all these members.
     pub tightest: bool,
     pub params: Vec<Param>,
 }
@@ -151,25 +151,25 @@ pub struct Candidate {
     pub members: Vec<String>,
     pub params: Vec<Param>,
     /// Type placeholder → method names called on values of that type
-    /// (from Phase 5 receiver types), sorted (rule P3).
+    /// (from the receiver types), sorted.
     pub required_methods: BTreeMap<String, Vec<String>>,
     /// Trait candidates: the shared method name.
     pub method: Option<String>,
     /// Trait candidates: the self types, sorted.
     pub types: Vec<String>,
-    /// `members × exemplar tokens` (rule P4).
+    /// `members × exemplar tokens`.
     pub weight: usize,
     pub note: String,
 }
 
-/// Types whose inherent impls all provide the same method names (rule I1).
+/// Types whose inherent impls all provide the same method names.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SharedMethodSet {
     pub methods: Vec<String>,
     pub types: Vec<String>,
 }
 
-/// One trait implemented for several types with the same bodies (rule I2).
+/// One trait implemented for several types with the same bodies.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct RepeatedImpl {
     pub trait_id: String,
@@ -256,7 +256,7 @@ fn is_upper(name: &str) -> bool {
 }
 
 // ---------------------------------------------------------------------------
-// S3: token classes gathered by span
+// Token classes gathered by span
 // ---------------------------------------------------------------------------
 
 #[derive(Default)]
@@ -336,7 +336,7 @@ impl<'ast> Visit<'ast> for Classes {
 }
 
 // ---------------------------------------------------------------------------
-// S2–S4: the shaper
+// The shaper
 // ---------------------------------------------------------------------------
 
 #[derive(Default)]
@@ -441,7 +441,7 @@ impl<'c> Shaper<'c> {
         self.push_all(close);
     }
 
-    /// Rule S2: joint punctuation stays one token (`::`, `->`, `+=`, `&&`);
+    /// Joint punctuation stays one token (`::`, `->`, `+=`, `&&`);
     /// `name ! ( .. )` is a macro invocation whose arguments are opaque.
     fn emit(&mut self, ts: TokenStream, opaque: bool) {
         let trees: Vec<TokenTree> = ts.into_iter().collect();
@@ -495,7 +495,7 @@ fn hash(s: &str) -> String {
     blake3::hash(s.as_bytes()).to_hex().to_string()
 }
 
-/// Rules S1–S5 for one function: its shapes, slots and token count.
+/// One function's shapes at every level, its slots and its token count.
 fn shape_fn(id: &str, sig: &syn::Signature, block: Option<&syn::Block>) -> FnShape {
     let mut classes = Classes::default();
     classes.visit_signature(sig);
@@ -533,7 +533,7 @@ fn shape_fn(id: &str, sig: &syn::Signature, block: Option<&syn::Block>) -> FnSha
 }
 
 // ---------------------------------------------------------------------------
-// M1: metrics over a body
+// Metrics over a body
 // ---------------------------------------------------------------------------
 
 #[derive(Default)]
@@ -648,7 +648,9 @@ fn all_equal<T: PartialEq>(items: &[T]) -> bool {
     items.windows(2).all(|w| w[0] == w[1])
 }
 
-/// Rules S1–M4.
+/// Mines the whole scan: shapes and metrics per function, clusters per level,
+/// their parameters, candidate refactorings, shared method sets and repeated
+/// impls.
 pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
     // every CapturedFn by its recorded location
     let by_loc: HashMap<(PathBuf, u32, u32), &CapturedFn> = k
@@ -658,7 +660,7 @@ pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
         .collect();
     let fns: BTreeMap<&str, &CapturedFn> = k.functions.iter().map(|f| (f.fq_name.as_str(), f)).collect();
 
-    // S1–S5 + M1 over every function (threshold applied later)
+    // shapes and metrics over every function (threshold applied later)
     let mut all: BTreeMap<String, FnShape> = BTreeMap::new();
     let mut counts: BTreeMap<String, (Counts, usize, bool)> = BTreeMap::new();
     for pf in &k.files {
@@ -682,8 +684,6 @@ pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
             all.insert(id, shape);
         }
     }
-
-    // M2–M3
     let mut metrics: BTreeMap<String, FnMetrics> = BTreeMap::new();
     for f in &k.functions {
         let id = f.fq_name.clone();
@@ -706,14 +706,12 @@ pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
         );
     }
 
-    // S5: shaped = big enough and not empty
+    // Shaped = big enough and not empty
     let shaped: Vec<&FnShape> = all
         .values()
         .filter(|s| s.tokens >= options.min_tokens && !counts.get(&s.id).is_some_and(|(_, _, empty)| *empty))
         .collect();
     let shape_of: HashMap<&str, &FnShape> = shaped.iter().map(|s| (s.id.as_str(), *s)).collect();
-
-    // C1–C4
     let mut clusters: Vec<Cluster> = Vec::new();
     let levels: &[ShapeLevel] = if HAVE_SPANS { &SHAPE_LEVELS } else { &SHAPE_LEVELS[..1] };
     for level in levels {
@@ -738,7 +736,7 @@ pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
         (a.level, std::cmp::Reverse(a.members.len()), &a.hash).cmp(&(b.level, std::cmp::Reverse(b.members.len()), &b.hash))
     });
 
-    // method id → self type id, from the Phase 5 impl records
+    // method id → self type id, from the impl records
     let mut self_type_of: HashMap<&str, (&str, bool)> = HashMap::new(); // (type id, is trait impl)
     for i in &k.impls {
         if let Some(Resolution::Local(t)) = i.self_ty.mentions.first() {
@@ -747,8 +745,6 @@ pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
             }
         }
     }
-
-    // P2–P4
     let mut candidates: Vec<Candidate> = Vec::new();
     for c in clusters.iter().filter(|c| c.tightest) {
         let members: Vec<&CapturedFn> = c.members.iter().filter_map(|m| fns.get(m.as_str()).copied()).collect();
@@ -801,7 +797,6 @@ pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
             };
             (kind, note, None, Vec::new())
         };
-        // P3
         let mut required_methods: BTreeMap<String, Vec<String>> = BTreeMap::new();
         if kind == CandidateKind::GenericFn {
             for p in c.params.iter().filter(|p| p.kind == ParamKind::Type) {
@@ -832,8 +827,6 @@ pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
         });
     }
     candidates.sort_by(|a, b| (std::cmp::Reverse(a.weight), &a.members[0]).cmp(&(std::cmp::Reverse(b.weight), &b.members[0])));
-
-    // I1
     let mut methods_by_type: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
     for i in &k.impls {
         if i.trait_.is_some() {
@@ -845,8 +838,6 @@ pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
         }
     }
     let shared_method_sets = shared_method_sets(&methods_by_type);
-
-    // I2
     let repeated_impls = repeated_impls(k, &all, levels);
 
     PatternReport {
@@ -860,7 +851,8 @@ pub fn mine(k: &Klepto, options: &MiningOptions) -> PatternReport {
     }
 }
 
-/// Rule P1.
+/// The parameters that differ between a cluster's members, one placeholder
+/// family per level.
 fn cluster_params(level: ShapeLevel, members: &[String], shape_of: &HashMap<&str, &FnShape>) -> Vec<Param> {
     let families: &[(ShapeLevel, ParamKind)] = match level {
         ShapeLevel::Exact | ShapeLevel::Renamed => &[],
@@ -890,7 +882,7 @@ fn cluster_params(level: ShapeLevel, members: &[String], shape_of: &HashMap<&str
     out
 }
 
-/// Rule I1: closed (methods, types) pairs, seeded by pairwise intersections
+/// Closed (methods, types) pairs, seeded by pairwise intersections
 /// and closed under further intersection.
 fn shared_method_sets(methods_by_type: &BTreeMap<String, BTreeSet<String>>) -> Vec<SharedMethodSet> {
     let types: Vec<(&String, &BTreeSet<String>)> = methods_by_type.iter().collect();
@@ -946,9 +938,9 @@ fn shared_method_sets(methods_by_type: &BTreeMap<String, BTreeSet<String>>) -> V
     v
 }
 
-/// Rule I2.
+/// One trait implemented for several types with same-shaped bodies.
 fn repeated_impls(k: &Klepto, all: &BTreeMap<String, FnShape>, levels: &[ShapeLevel]) -> Vec<RepeatedImpl> {
-    let mut by_trait: BTreeMap<String, Vec<&crate::types::ImplDecl>> = BTreeMap::new();
+    let mut by_trait: BTreeMap<String, Vec<&crate::typing::types::ImplDecl>> = BTreeMap::new();
     for i in &k.impls {
         let Some(tr) = i.trait_.as_ref().and_then(|t| t.mentions.first()) else { continue };
         let trait_id = match tr {
@@ -960,7 +952,7 @@ fn repeated_impls(k: &Klepto, all: &BTreeMap<String, FnShape>, levels: &[ShapeLe
         }
         by_trait.entry(trait_id).or_default().push(i);
     }
-    let self_type = |i: &crate::types::ImplDecl| -> String {
+    let self_type = |i: &crate::typing::types::ImplDecl| -> String {
         match i.self_ty.mentions.first() {
             Some(Resolution::Local(t)) | Some(Resolution::External(t)) => t.clone(),
             _ => i.self_ty.raw.clone(),
@@ -973,7 +965,7 @@ fn repeated_impls(k: &Klepto, all: &BTreeMap<String, FnShape>, levels: &[ShapeLe
         }
         let mut seen: BTreeSet<Vec<String>> = BTreeSet::new();
         for level in levels {
-            let mut parts: BTreeMap<Vec<(String, String)>, Vec<&crate::types::ImplDecl>> = BTreeMap::new();
+            let mut parts: BTreeMap<Vec<(String, String)>, Vec<&crate::typing::types::ImplDecl>> = BTreeMap::new();
             for i in &impls {
                 let mut sig: Vec<(String, String)> = i
                     .methods

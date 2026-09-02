@@ -1,4 +1,4 @@
-use crate::cfg::CfgPredicate;
+use crate::resolve::cfg::CfgPredicate;
 use crate::graph::NodeKind;
 use globset::GlobSetBuilder;
 use serde::{Deserialize, Serialize};
@@ -45,13 +45,13 @@ pub struct CapturedFn {
     pub signature: String,
     pub location: FileLocation,
     /// Type and const parameter names in scope inside the body: the fn's own
-    /// plus those of the enclosing impl or trait (rule S5).
+    /// plus those of the enclosing impl or trait.
     #[serde(default)]
     pub generics: Vec<String>,
-    /// Effective cfg: own `#[cfg]` and every enclosing one (rule E1).
+    /// Effective cfg: own `#[cfg]` and every enclosing one.
     #[serde(default)]
     pub cfg: CfgPredicate,
-    /// Rule X6: the macro that generated this item (`name!`), if any.
+    /// The macro that generated this item (`name!`), if any.
     #[serde(default)]
     pub generated: Option<String>,
 }
@@ -61,7 +61,7 @@ impl CapturedFn {
     pub fn has_docs(&self) -> bool { self.has_docs }
 }
 
-/// Every item declaration of every kind (Phase 3, rule N1), as the
+/// Every item declaration of every kind, as the
 /// extractors see it; the graph builder turns these into nodes.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ItemDecl {
@@ -78,13 +78,13 @@ pub struct ItemDecl {
     pub location: FileLocation,
     pub cfg: CfgPredicate,
     pub is_public: bool,
-    /// Rule X6: the macro that generated this item (`name!`), if any.
+    /// The macro that generated this item (`name!`), if any.
     #[serde(default)]
     pub generated: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
-// Resolution (Phase 1) — see PHASE1_RULES.md
+// Resolution
 // ---------------------------------------------------------------------------
 
 /// What a path spelled in source actually names, once module tree and
@@ -153,19 +153,19 @@ pub struct ModuleInfo {
     /// for package roots and orphans.
     pub declared_in: Option<PathBuf>,
     pub is_pub: bool,
-    /// A `.rs` file no `mod` declaration reaches (rule M5).
+    /// A `.rs` file no `mod` declaration reaches.
     pub orphan: bool,
     /// Names defined directly in this module and what they are.
     pub items: BTreeMap<String, ItemKind>,
     /// Files claimed by other `#[cfg]`-gated declarations of the same module
-    /// (rule M6); the first declaration wins `file`.
+    ///; the first declaration wins `file`.
     pub alternates: Vec<PathBuf>,
-    /// `#[macro_use]` on this module's declaration (rule R12): its `macro_rules!`
+    /// `#[macro_use]` on this module's declaration: its `macro_rules!`
     /// names are visible in the parent module too.
     #[serde(default)]
     pub macro_use: bool,
     /// Effective cfg of the module: the `mod` declaration's `#[cfg]` and its
-    /// parents' (rule E2).
+    /// parents'.
     #[serde(default)]
     pub cfg: CfgPredicate,
 }
@@ -216,10 +216,10 @@ pub struct StolenPath {
     /// rather than at module level.
     #[serde(default)]
     pub enclosing_fn: Option<String>,
-    /// Innermost enclosing item id (rule N5); `None` at module level.
+    /// Innermost enclosing item id; `None` at module level.
     #[serde(default)]
     pub enclosing_item: Option<String>,
-    /// What the `use` target names (Phase 1).
+    /// What the `use` target names.
     #[serde(default)]
     pub resolution: Option<Resolution>,
     #[serde(default)]
@@ -248,7 +248,7 @@ pub struct MacroDef {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MacroInvocation {
     pub name: String,
-    /// Rule R14 (see `PathOccurrence::covered`).
+    /// Twin coverage (see `PathOccurrence::covered`).
     #[serde(default)]
     pub covered: bool,
     pub module_path: Vec<String>,
@@ -259,7 +259,7 @@ pub struct MacroInvocation {
     pub enclosing_fn: Option<String>,
     #[serde(default)]
     pub enclosing_public: Option<bool>,
-    /// Innermost enclosing item id (rule N5); `None` at module level.
+    /// Innermost enclosing item id; `None` at module level.
     #[serde(default)]
     pub enclosing_item: Option<String>,
     #[serde(default)]
@@ -268,7 +268,7 @@ pub struct MacroInvocation {
     pub cfg: CfgPredicate,
 }
 
-/// Which namespace a path is looked up in (rule R15): a type position, a
+/// Which namespace a path is looked up in: a type position, a
 /// value position (expression, tuple-struct pattern), or unknown.
 #[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub enum Namespace {
@@ -281,7 +281,7 @@ pub enum Namespace {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PathOccurrence {
     pub path: String,
-    /// Rule R14: resolved to one of cfg-twin bindings that together cover
+    /// Resolved to one of cfg-twin bindings that together cover
     /// every build; the reference edge is exempt from cfg checking.
     #[serde(default)]
     pub covered: bool,
@@ -291,14 +291,14 @@ pub struct PathOccurrence {
     pub enclosing_fn: Option<String>,
     #[serde(default)]
     pub enclosing_public: Option<bool>,
-    /// Innermost enclosing item id (rule N5); `None` at module level.
+    /// Innermost enclosing item id; `None` at module level.
     #[serde(default)]
     pub enclosing_item: Option<String>,
     #[serde(default)]
     pub resolution: Option<Resolution>,
     #[serde(default)]
     pub cfg: CfgPredicate,
-    /// Rule R15: the namespace of the position the path is written in.
+    /// The namespace of the position the path is written in.
     #[serde(default)]
     pub ns: Namespace,
 }
@@ -306,7 +306,7 @@ pub struct PathOccurrence {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CallOccurrence {
     pub callee: String,
-    /// Rule R14 (see `PathOccurrence::covered`).
+    /// Twin coverage (see `PathOccurrence::covered`).
     #[serde(default)]
     pub covered: bool,
     pub module_path: Vec<String>,
@@ -315,18 +315,18 @@ pub struct CallOccurrence {
     pub enclosing_fn: Option<String>,
     #[serde(default)]
     pub enclosing_public: Option<bool>,
-    /// Innermost enclosing item id (rule N5); `None` at module level.
+    /// Innermost enclosing item id; `None` at module level.
     #[serde(default)]
     pub enclosing_item: Option<String>,
     /// `x.foo()` rather than `foo(..)` / `path::to::foo(..)`.
     #[serde(default)]
     pub is_method: bool,
     /// Resolution of the callee path for `path::to::f(..)` calls; for method
-    /// calls, the method node when Phase 5 can type the receiver, else
+    /// calls, the method node when klepto can type the receiver, else
     /// `Unresolved { reason: MethodCall }`.
     #[serde(default)]
     pub resolution: Option<Resolution>,
-    /// Method calls: the receiver's type when known (rules M1–M6).
+    /// Method calls: the receiver's type when known.
     #[serde(default)]
     pub receiver_type: Option<Resolution>,
     #[serde(default)]
@@ -341,7 +341,7 @@ pub struct AttrOccurrence {
     pub path: String,
     /// Paths found inside the attribute's arguments, e.g. `serde::Serialize`
     /// in `#[derive(serde::Serialize)]`, including single identifiers
-    /// (rule O4).
+    ///.
     pub arg_paths: Vec<String>,
     pub module_path: Vec<String>,
     pub location: FileLocation,
@@ -349,7 +349,7 @@ pub struct AttrOccurrence {
     pub enclosing_fn: Option<String>,
     #[serde(default)]
     pub enclosing_public: Option<bool>,
-    /// Innermost enclosing item id (rule N5); `None` at module level.
+    /// Innermost enclosing item id; `None` at module level.
     #[serde(default)]
     pub enclosing_item: Option<String>,
     #[serde(default)]
@@ -357,11 +357,11 @@ pub struct AttrOccurrence {
     /// Parallel to `arg_paths`.
     #[serde(default)]
     pub arg_resolutions: Vec<Resolution>,
-    /// For `#[cfg(..)]` attributes: the parsed predicate (rule C1).
+    /// For `#[cfg(..)]` attributes: the parsed predicate.
     #[serde(default)]
     pub predicate: Option<CfgPredicate>,
     /// Effective cfg at the attribute (for an attribute produced by
-    /// `cfg_attr`, the `cfg_attr` condition is included — rule E5).
+    /// `cfg_attr`, the `cfg_attr` condition is included).
     #[serde(default)]
     pub cfg: CfgPredicate,
 }

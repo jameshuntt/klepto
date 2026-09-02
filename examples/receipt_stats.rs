@@ -1,9 +1,9 @@
-//! Phase 6 sanity check on a real workspace: receipt size and digest, KG
+//! Sanity check on a real workspace: receipt size and digest, KG
 //! record counts, and the pipeline verdict under a quiet policy.
 //!
 //!     cargo run --example receipt_stats -- <workspace root> <crate name>
 
-use klepto::{kg, run_pipeline, Klepto, Policy, Receipt};
+use klepto::{receipt::kg, run_pipeline, Klepto, Policy, Receipt};
 use std::collections::BTreeMap;
 
 fn main() {

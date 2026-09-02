@@ -99,7 +99,7 @@ methods the type parameter needs), introduce a trait, or write a
 and per-function metrics.
 
 ```rust,no_run
-use klepto::{kg, run_pipeline, Klepto, Policy, Receipt};
+use klepto::{receipt::kg, run_pipeline, Klepto, Policy, Receipt};
 
 let k = Klepto::new("app").scan_workspace_root(".")?.parse()?;
 
@@ -181,5 +181,3 @@ deterministic, and a crate of a few hundred files takes seconds.
 `scan_workspace_root`, `exclude_generated`, `parse`, `dep_use_sites`,
 `internal_use_sites`, `imports` are the contract earlier consumers rely on
 and are kept stable. Everything since 0.1.3 is additive.
-
-The rules every layer follows, with the fixtures and tests that pin them, are numbered rules (M, S, R, O, E, Q, N, D, X, T) cited in the source and tests.

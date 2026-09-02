@@ -3,7 +3,7 @@
 //!
 //!     cargo run --release --example big_run -- <crate root> <crate name>
 
-use klepto::{kg, run_pipeline, Klepto, Policy, Receipt, Resolution};
+use klepto::{receipt::kg, run_pipeline, Klepto, Policy, Receipt, Resolution};
 use std::collections::BTreeMap;
 use std::time::Instant;
 
@@ -38,7 +38,7 @@ fn main() {
     let ext_paths = k.paths.iter().filter(|p| matches!(p.resolution, Some(Resolution::External(_)))).count();
     let unres_paths = k.paths.len() - local_paths - ext_paths;
 
-    // Phase 8: the expansion ledger
+    // The expansion ledger
     let mut by_outcome: BTreeMap<String, usize> = BTreeMap::new();
     for e in &k.expansions {
         let key = match &e.outcome {

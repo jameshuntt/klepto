@@ -1,7 +1,7 @@
 use crate::klepto::Klepto;
 use crate::model::*;
-pub mod builtin;
-pub mod phase6;
+pub mod api;
+pub mod structure;
 pub mod patterns;
 
 pub trait Rule {
@@ -10,23 +10,23 @@ pub trait Rule {
     fn run(&self, k: &Klepto) -> Vec<Finding>;
 }
 
-/// Every built-in rule, Phase 0 lints and Phase 6 analyses alike (rule A1).
+/// Every built-in rule, API lints and structure analyses alike.
 pub fn all_rules() -> Vec<Box<dyn Rule>> {
     vec![
-        Box::new(builtin::UndocumentedPublicApi),
-        Box::new(builtin::UnwrapInPublicApi),
-        Box::new(builtin::StdInNoStdCrate),
-        Box::new(builtin::PanicMacrosInPublicApi),
-        Box::new(phase6::UngatedDepUse),
-        Box::new(phase6::CfgEdgeViolations),
-        Box::new(phase6::UnresolvedReferences),
-        Box::new(phase6::UnreferencedItems),
-        Box::new(phase6::OrphanFiles),
-        Box::new(phase6::SkippedFiles),
+        Box::new(api::UndocumentedPublicApi),
+        Box::new(api::UnwrapInPublicApi),
+        Box::new(api::StdInNoStdCrate),
+        Box::new(api::PanicMacrosInPublicApi),
+        Box::new(structure::UngatedDepUse),
+        Box::new(structure::CfgEdgeViolations),
+        Box::new(structure::UnresolvedReferences),
+        Box::new(structure::UnreferencedItems),
+        Box::new(structure::OrphanFiles),
+        Box::new(structure::SkippedFiles),
         Box::new(patterns::DuplicateFunctions),
         Box::new(patterns::RepeatedImpls),
-        Box::new(phase6::CfgEdgeUnknown),
-        Box::new(phase6::UngatedDepUnknown),
+        Box::new(structure::CfgEdgeUnknown),
+        Box::new(structure::UngatedDepUnknown),
     ]
 }
 
@@ -37,7 +37,7 @@ pub fn all_codes() -> Vec<(&'static str, &'static str)> {
     v
 }
 
-/// Rule A3: findings in a stable order — code, then location, then message.
+/// Findings in a stable order — code, then location, then message.
 pub fn sort_findings(findings: &mut [Finding]) {
     findings.sort_by(|a, b| {
         (a.code.as_str(), &a.location.path, a.location.line, a.location.column, a.message.as_str())
@@ -56,14 +56,14 @@ impl<'k> RuleRunner<'k> {
     }
 
     pub fn with_default_rules(mut self) -> Self {
-        self.rules.push(Box::new(builtin::UndocumentedPublicApi));
-        self.rules.push(Box::new(builtin::UnwrapInPublicApi));
-        self.rules.push(Box::new(builtin::StdInNoStdCrate));
-        self.rules.push(Box::new(builtin::PanicMacrosInPublicApi));
+        self.rules.push(Box::new(api::UndocumentedPublicApi));
+        self.rules.push(Box::new(api::UnwrapInPublicApi));
+        self.rules.push(Box::new(api::StdInNoStdCrate));
+        self.rules.push(Box::new(api::PanicMacrosInPublicApi));
         self
     }
 
-    /// The Phase 0 lints plus the Phase 6 analyses (rule A1).
+    /// The API lints plus the structure analyses.
     pub fn with_all_rules(mut self) -> Self {
         self.rules.extend(all_rules());
         self
@@ -74,7 +74,7 @@ impl<'k> RuleRunner<'k> {
         self
     }
 
-    /// Findings of every rule, in the stable order of rule A3.
+    /// Findings of every rule, in stable order.
     pub fn run(self) -> Vec<Finding> {
         let mut all = Vec::new();
         for r in self.rules {

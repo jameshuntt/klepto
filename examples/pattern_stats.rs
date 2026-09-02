@@ -1,4 +1,4 @@
-//! Phase 7 sanity check on a real workspace: shapes, tightest clusters per
+//! Sanity check on a real workspace: shapes, tightest clusters per
 //! level, candidates per kind, impl mining, and the heaviest proposals.
 //!
 //!     cargo run --example pattern_stats -- <workspace root> <crate name>
