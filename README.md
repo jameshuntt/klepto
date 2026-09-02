@@ -182,5 +182,4 @@ deterministic, and a crate of a few hundred files takes seconds.
 `internal_use_sites`, `imports` are the contract earlier consumers rely on
 and are kept stable. Everything since 0.1.3 is additive.
 
-The rules every layer follows, with the fixtures and tests that pin them,
-are in `PHASE1_RULES.md` … `PHASE8_RULES.md` next to this file.
+The rules every layer follows, with the fixtures and tests that pin them, are numbered rules (M, S, R, O, E, Q, N, D, X, T) cited in the source and tests.
