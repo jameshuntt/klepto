@@ -1,0 +1,5 @@
+# Desired feature layout for the `plan` fixture (rules S1–S4).
+# Same value syntax as Cargo `[features]`.
+
+[app.features]
+a = ["dep:alpha", "dep:beta"]

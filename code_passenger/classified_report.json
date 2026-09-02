@@ -1,0 +1,776 @@
+{
+  "phase": "Done",
+  "files": {
+    "async_classified_data.rs": {
+      "used_external": [
+        "futures",
+        "secrecy",
+        "subtle",
+        "tokio",
+        "zeroize"
+      ],
+      "used_internal_roots": [
+        "classified"
+      ],
+      "external_symbol_counts": {
+        "futures": {
+          "executor": 1
+        },
+        "subtle": {
+          "ConstantTimeEq": 1
+        },
+        "tokio": {
+          "Mutex": 2,
+          "main": 1,
+          "sync": 1,
+          "test": 3
+        },
+        "zeroize": {
+          "Zeroize": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "classified": {
+          "async_classified_data": 1
+        }
+      }
+    },
+    "classified_data.rs": {
+      "used_external": [
+        "secrecy",
+        "subtle",
+        "tokio",
+        "zeroize"
+      ],
+      "used_internal_roots": [
+        "classified",
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "subtle": {
+          "ConstantTimeEq": 1
+        },
+        "tokio": {
+          "test": 2
+        },
+        "zeroize": {
+          "Zeroize": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "classified": {
+          "classified_data": 1
+        },
+        "crate": {
+          "impl_drop": 1,
+          "impl_expose": 1,
+          "traits": 1
+        }
+      }
+    },
+    "classified_map.rs": {
+      "used_external": [
+        "zeroize"
+      ],
+      "used_internal_roots": [
+        "classified",
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "zeroize": {
+          "Zeroize": 3
+        }
+      },
+      "internal_symbol_counts": {
+        "classified": {
+          "classified_map": 2
+        },
+        "crate": {
+          "classified_data": 1
+        }
+      }
+    },
+    "concurrency.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "concurrency/actor_channel.rs": {
+      "used_external": [
+        "async_trait",
+        "tokio"
+      ],
+      "used_internal_roots": [
+        "crate",
+        "super"
+      ],
+      "external_symbol_counts": {
+        "async_trait": {
+          "async_trait": 1
+        },
+        "tokio": {
+          "sync": 1,
+          "test": 4,
+          "time": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "concurrency": 1
+        },
+        "super": {
+          "csp": 1
+        }
+      }
+    },
+    "concurrency/actors.rs": {
+      "used_external": [
+        "async_trait",
+        "tokio",
+        "tracing"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "async_trait": {
+          "async_trait": 4
+        },
+        "tokio": {
+          "select": 2,
+          "spawn": 2,
+          "sync": 1,
+          "task": 1,
+          "test": 8
+        },
+        "tracing": {
+          "error": 3,
+          "info": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "config": 1
+        }
+      }
+    },
+    "concurrency/csp.rs": {
+      "used_external": [
+        "async_trait",
+        "tokio",
+        "tracing"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "async_trait": {
+          "async_trait": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    },
+    "concurrency/futures.rs": {
+      "used_external": [
+        "async_trait",
+        "tokio",
+        "tracing"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "async_trait": {
+          "async_trait": 1
+        },
+        "tokio": {
+          "sync": 1,
+          "time": 2
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "classified_data": 1,
+          "errors": 1,
+          "traits": 1
+        }
+      }
+    },
+    "concurrency/streams.rs": {
+      "used_external": [
+        "async_trait",
+        "futures",
+        "opentelemetry",
+        "tokio",
+        "tokio_stream",
+        "tracing"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "async_trait": {
+          "async_trait": 1
+        },
+        "tokio": {
+          "spawn": 2,
+          "sync": 2,
+          "test": 1,
+          "time": 4
+        },
+        "tokio_stream": {
+          "wrappers": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "config": 1
+        }
+      }
+    },
+    "config.rs": {
+      "used_external": [
+        "serde",
+        "toml",
+        "zeroize"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "serde": {
+          "Deserialize": 1,
+          "Deserializer": 1
+        },
+        "toml": {
+          "from_str": 1
+        },
+        "zeroize": {
+          "Zeroize": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "config": 1
+        }
+      }
+    },
+    "crypto.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "crypto/crypto_algorithm.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "crypto/crypto_builder.rs": {
+      "used_external": [
+        "secrecy"
+      ],
+      "used_internal_roots": [
+        "crate",
+        "super"
+      ],
+      "external_symbol_counts": {
+        "secrecy": {
+          "ExposeSecret": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "crypto": 1,
+          "errors": 1
+        },
+        "super": {
+          "crypto_algorithm": 1,
+          "crypto_primitive": 1,
+          "key_length": 1
+        }
+      }
+    },
+    "crypto/crypto_primitive.rs": {
+      "used_external": [
+        "secrecy",
+        "zeroize"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "zeroize": {
+          "Zeroize": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "crypto": 1,
+          "errors": 1
+        }
+      }
+    },
+    "crypto/crypto_stage.rs": {
+      "used_external": [
+        "async_trait",
+        "tracing"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "async_trait": {
+          "async_trait": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "classified_data": 1,
+          "errors": 1
+        }
+      }
+    },
+    "crypto/helpers.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "crypto": 1,
+          "errors": 1
+        }
+      }
+    },
+    "crypto/key_length.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "crypto_fallback.rs": {
+      "used_external": [
+        "tokio"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "tokio": {
+          "select": 2,
+          "task": 3,
+          "test": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "classified_data": 2,
+          "crypto_fallback": 1,
+          "errors": 2
+        }
+      }
+    },
+    "data_repository.rs": {
+      "used_external": [
+        "tokio",
+        "zeroize"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "tokio": {
+          "sync": 1,
+          "test": 4
+        },
+        "zeroize": {
+          "Zeroize": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "classified_data": 2,
+          "errors": 1
+        }
+      }
+    },
+    "errors.rs": {
+      "used_external": [
+        "thiserror",
+        "toml"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "thiserror": {
+          "Error": 2
+        },
+        "toml": {
+          "de": 3
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "errors": 6
+        }
+      }
+    },
+    "exposure_aware_classified_data.rs": {
+      "used_external": [
+        "secrecy",
+        "subtle",
+        "tokio",
+        "tracing",
+        "tracing_subscriber",
+        "zeroize"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "tokio": {
+          "test": 2
+        },
+        "tracing": {
+          "subscriber": 1,
+          "warn": 1
+        },
+        "zeroize": {
+          "Zeroize": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    },
+    "key_manager.rs": {
+      "used_external": [
+        "subtle",
+        "tokio",
+        "tracing"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "subtle": {
+          "ConstantTimeEq": 1
+        },
+        "tokio": {
+          "spawn": 1,
+          "sync": 1,
+          "time": 1
+        },
+        "tracing": {
+          "info": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "classified_data": 1,
+          "errors": 1
+        }
+      }
+    },
+    "layer_stack.rs": {
+      "used_external": [
+        "async_trait",
+        "tokio"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "async_trait": {
+          "async_trait": 1
+        },
+        "tokio": {
+          "test": 3
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "classified_data": 1,
+          "errors": 1,
+          "traits": 1
+        }
+      }
+    },
+    "lib.rs": {
+      "used_external": [],
+      "used_internal_roots": [],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {}
+    },
+    "macros.rs": {
+      "used_external": [
+        "secrecy",
+        "subtle",
+        "zeroize"
+      ],
+      "used_internal_roots": [
+        "classified",
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "subtle": {
+          "ConstantTimeEq": 1
+        },
+        "zeroize": {
+          "Zeroize": 2
+        }
+      },
+      "internal_symbol_counts": {
+        "classified": {
+          "classified_data": 1,
+          "impl_secure_classified": 1
+        },
+        "crate": {
+          "impl_clone": 1,
+          "impl_ct": 1,
+          "impl_debug": 2,
+          "impl_deref": 1,
+          "impl_drop": 1,
+          "impl_expose": 1,
+          "impl_secure_eq": 1,
+          "secrecy": 1,
+          "subtle": 2,
+          "traits": 1,
+          "zeroize": 13
+        }
+      }
+    },
+    "pipelines.rs": {
+      "used_external": [
+        "futures",
+        "tokio"
+      ],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {
+        "tokio": {
+          "main": 1
+        }
+      },
+      "internal_symbol_counts": {
+        "crate": {
+          "classified_data": 1,
+          "concurrency": 4,
+          "config": 1,
+          "crypto": 2,
+          "errors": 1,
+          "pipeline_builder": 1,
+          "traits": 1
+        }
+      }
+    },
+    "secure_service.rs": {
+      "used_external": [],
+      "used_internal_roots": [
+        "crate"
+      ],
+      "external_symbol_counts": {},
+      "internal_symbol_counts": {
+        "crate": {
+          "classified_data": 1,
+          "errors": 1,
+          "key_manager": 1,
+          "pipelines": 1
+        }
+      }
+    },
+    "sized_classified_data.rs": {
+      "used_external": [
+        "zeroize"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "zeroize": {
+          "Zeroize": 2
+        }
+      },
+      "internal_symbol_counts": {}
+    },
+    "thread_pool_manager.rs": {
+      "used_external": [
+        "tokio"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "tokio": {
+          "task": 1,
+          "test": 3,
+          "time": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    },
+    "traits.rs": {
+      "used_external": [
+        "async_trait",
+        "zeroize"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "async_trait": {
+          "async_trait": 2
+        },
+        "zeroize": {
+          "Zeroize": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    },
+    "zeroizing_guard.rs": {
+      "used_external": [
+        "zeroize"
+      ],
+      "used_internal_roots": [],
+      "external_symbol_counts": {
+        "zeroize": {
+          "Zeroize": 1
+        }
+      },
+      "internal_symbol_counts": {}
+    }
+  },
+  "crate_totals": {
+    "external_dep_hits": {
+      "async_trait": 12,
+      "futures": 1,
+      "secrecy": 1,
+      "serde": 2,
+      "subtle": 4,
+      "thiserror": 2,
+      "tokio": 66,
+      "tokio_stream": 1,
+      "toml": 4,
+      "tracing": 7,
+      "zeroize": 15
+    },
+    "internal_root_hits": {
+      "classified": 6,
+      "crate": 78,
+      "super": 4
+    },
+    "external_head_hits": {},
+    "internal_head_hits": {},
+    "top_external_symbols": {
+      "async_trait": [
+        [
+          "async_trait",
+          12
+        ]
+      ],
+      "futures": [
+        [
+          "executor",
+          1
+        ]
+      ],
+      "secrecy": [
+        [
+          "ExposeSecret",
+          1
+        ]
+      ],
+      "serde": [
+        [
+          "Deserialize",
+          1
+        ],
+        [
+          "Deserializer",
+          1
+        ]
+      ],
+      "subtle": [
+        [
+          "ConstantTimeEq",
+          4
+        ]
+      ],
+      "thiserror": [
+        [
+          "Error",
+          2
+        ]
+      ],
+      "tokio": [
+        [
+          "test",
+          31
+        ],
+        [
+          "time",
+          9
+        ],
+        [
+          "sync",
+          8
+        ],
+        [
+          "spawn",
+          5
+        ],
+        [
+          "task",
+          5
+        ],
+        [
+          "select",
+          4
+        ],
+        [
+          "Mutex",
+          2
+        ],
+        [
+          "main",
+          2
+        ]
+      ],
+      "tokio_stream": [
+        [
+          "wrappers",
+          1
+        ]
+      ],
+      "toml": [
+        [
+          "de",
+          3
+        ],
+        [
+          "from_str",
+          1
+        ]
+      ],
+      "tracing": [
+        [
+          "error",
+          3
+        ],
+        [
+          "info",
+          2
+        ],
+        [
+          "subscriber",
+          1
+        ],
+        [
+          "warn",
+          1
+        ]
+      ],
+      "zeroize": [
+        [
+          "Zeroize",
+          15
+        ]
+      ]
+    }
+  },
+  "findings": []
+}

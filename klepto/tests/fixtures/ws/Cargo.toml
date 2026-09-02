@@ -1,0 +1,6 @@
+[workspace]
+resolver = "2"
+members = ["app", "mydep", "extra"]
+# `outside` is a path dependency of `app` that is deliberately NOT a
+# workspace member, so it classifies as ImportOrigin::Dependency.
+exclude = ["outside"]

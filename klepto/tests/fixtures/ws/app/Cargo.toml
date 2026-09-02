@@ -1,0 +1,12 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+mydep = { path = "../mydep" }
+outside = { path = "../outside" }
+extra = { path = "../extra", optional = true }
+
+[features]
+with_extra = ["dep:extra"]

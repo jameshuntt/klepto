@@ -1,0 +1,27 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+default = []
+logging = []
+# Q10: implications must survive a wide feature list (clap has twenty)
+help = []
+wrap_help = ["help"]
+f01 = []
+f02 = []
+f03 = []
+f04 = []
+f05 = []
+f06 = []
+f07 = []
+f08 = []
+f09 = []
+f10 = []
+f11 = []
+f12 = []
+f13 = []
+f14 = []
+f15 = []
+f16 = []

@@ -1,0 +1,12 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+dep_x = { path = "../dep_x" }
+opt_y = { path = "../opt_y", optional = true }
+
+[features]
+default = []
+y = ["dep:opt_y"]
