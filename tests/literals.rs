@@ -130,3 +130,14 @@ fn an_attribute_keeps_its_argument_tokens() {
     assert_eq!(d.args, "note = \"use serving\"");
     assert_eq!(d.enclosing_item.as_deref(), Some("app::old_serving"));
 }
+
+#[test]
+fn a_path_knows_whether_it_builds_or_matches() {
+    let k = literals();
+    let at = |fn_id: &str, role: PathRole| k.paths.iter().filter(|p| p.path == "Config" && p.enclosing_fn.as_deref() == Some(fn_id) && p.role == role).count();
+    assert_eq!(at("app::Config::named", PathRole::StructLiteral), 1);
+    assert_eq!(at("app::configs", PathRole::StructLiteral), 1);
+    assert_eq!(at("app::configs", PathRole::Pattern), 1);
+    // `Mode::Serving` in a match arm is a pattern
+    assert!(k.paths.iter().any(|p| p.path == "Mode::Serving" && p.enclosing_fn.as_deref() == Some("app::serving") && p.role == PathRole::Pattern));
+}

@@ -40,3 +40,18 @@ pub fn serving(m: &Mode) -> bool {
 pub fn old_serving() -> bool {
     false
 }
+
+pub struct Config {
+    pub name: String,
+}
+
+impl Config {
+    pub fn named(name: &str) -> Self {
+        Config { name: name.to_string() }
+    }
+}
+
+pub fn configs(c: &Config) -> Option<Config> {
+    let Config { name } = c;
+    Some(Config { name: name.clone() })
+}

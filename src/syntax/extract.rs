@@ -851,6 +851,10 @@ pub fn extract_occurrences(
         match_stack: Vec<usize>,
         // (match, arm) whose pattern is being visited
         arm_pattern: Option<(usize, usize)>,
+        // > 0 while inside a pattern
+        pattern_depth: usize,
+        // the next path visited is a struct literal's own path
+        struct_path: bool,
 
         out: Occurrences,
     }
@@ -1498,7 +1502,9 @@ pub fn extract_occurrences(
                 self.visit_qself(q);
             }
             self.ns_stack.push(Namespace::Type);
+            self.struct_path = true;
             self.visit_path(&s.path);
+            self.struct_path = false;
             self.ns_stack.pop();
             for f in &s.fields {
                 self.visit_field_value(f);
@@ -1506,6 +1512,12 @@ pub fn extract_occurrences(
             if let Some(rest) = &s.rest {
                 self.visit_expr(rest);
             }
+        }
+
+        fn visit_pat(&mut self, p: &'ast syn::Pat) {
+            self.pattern_depth += 1;
+            syn::visit::visit_pat(self, p);
+            self.pattern_depth -= 1;
         }
 
         fn visit_pat_tuple_struct(&mut self, p: &'ast syn::PatTupleStruct) {
@@ -1671,6 +1683,13 @@ pub fn extract_occurrences(
                 cfg: self.cfg(),
                 ns: self.ns(),
                 arg_of: self.arg_stack.last().cloned(),
+                role: if std::mem::take(&mut self.struct_path) {
+                    PathRole::StructLiteral
+                } else if self.pattern_depth > 0 {
+                    PathRole::Pattern
+                } else {
+                    PathRole::Other
+                },
             };
             if let Some((mi, ai)) = self.arm_pattern {
                 self.out.matches[mi].arms[ai].paths.push(ArmPath { path: s.clone(), location: occ.location.clone(), resolution: None });

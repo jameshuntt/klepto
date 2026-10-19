@@ -347,6 +347,23 @@ pub struct PathOccurrence {
     /// The call it is written in the arguments of, if any.
     #[serde(default)]
     pub arg_of: Option<ArgOf>,
+    /// Where it is written: a struct literal's path, inside a pattern, or
+    /// anywhere else.
+    #[serde(default)]
+    pub role: PathRole,
+}
+
+/// Where a path is written, so "who builds this type" and "who matches on
+/// it" are questions over klepto's data.
+#[derive(Debug, Clone, Copy, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub enum PathRole {
+    /// An expression, a type, an import: anywhere not below.
+    #[default]
+    Other,
+    /// The path of a struct literal (`Config { .. }`).
+    StructLiteral,
+    /// Inside a pattern (`let`, `match` arms, `if let`, parameters).
+    Pattern,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
