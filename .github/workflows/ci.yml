@@ -28,6 +28,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.rust }}
+      - name: The fixtures' registry dependencies, on disk
+        # klepto reads a dependency's macros from the cargo registry (cargo metadata --offline)
+        # and never downloads one; tests/fixtures/expand expects lazy_static's there
+        run: |
+          for lock in $(git ls-files 'tests/fixtures/**/Cargo.lock'); do
+            cargo fetch --locked --manifest-path "$(dirname "$lock")/Cargo.toml"
+          done
       - name: Test
         # the committed Cargo.lock: the oldest Rust builds the same tree rust-version was checked against
         run: cargo test --locked --all-features
