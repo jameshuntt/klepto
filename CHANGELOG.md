@@ -28,7 +28,7 @@ Four things a consumer reading a workspace needed (literals with their calls, pa
 
 ### Packages
 
-- `PackageInfo` / `TargetInfo` and `Klepto::packages`: every workspace member's name (both spellings), version, manifest path, directory and targets, from the cargo metadata `scan_workspace_root` already reads (src/model.rs, src/klepto.rs). A consumer no longer runs cargo metadata a second time to find a package's binaries.
+- `PackageInfo` / `TargetInfo` and `Klepto::packages`: every workspace member's name (both spellings), version, manifest path, directory and targets, from the cargo metadata `scan_workspace_root` already reads (src/model.rs, src/klepto.rs). A consumer no longer runs cargo metadata a second time to find a package's binaries. `KleptoBuilder::packages` gives them before anything is parsed.
 
 ### Match expressions
 
@@ -52,6 +52,6 @@ Four things a consumer reading a workspace needed (literals with their calls, pa
 
 - tests/literals.rs (7 tests, fixtures tests/fixtures/literals, globcycle, doubling): a literal's call and the call's resolution (`std::env::var("APP_KEY")`, `env_or(ENV_SOCKET, "/run/app.sock")`), a const initialiser as the literal's item, a path argument's call, literals and paths in macro tokens, doc comments not recorded, four cyclic globs finishing with the name unresolved, forty doubling lets finishing with the first calls typed.
 - tests/literals.rs also: the arms of two matches on an enum, resolved, with the catch-all marked; a fingerprint equal on the same files and different after an edit; a workspace fingerprint holding its manifests, an attribute's argument tokens, a path's role in a literal and a pattern, a variant's place and attributes and a macro's tokens (13 tests in the file).
-- tests/packages.rs (2 tests): members' manifests, roots and targets; none for a folder scan.
-- `cargo test`: 163 tests, all pass (148 before).
+- tests/packages.rs (3 tests): members' manifests, roots and targets; none for a folder scan; the builder's packages before parsing.
+- `cargo test`: 164 tests, all pass (148 before).
 - examples/scale.rs: time and memory on a workspace or some of its members.

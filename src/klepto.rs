@@ -315,6 +315,13 @@ impl KleptoBuilder {
         Ok(self)
     }
 
+    /// The workspace members `scan_workspace_root` read from cargo metadata,
+    /// before anything is parsed: a consumer that needs the packages alone
+    /// does not parse for them.
+    pub fn packages(&self) -> &BTreeMap<String, PackageInfo> {
+        &self.packages
+    }
+
     pub fn only_members(mut self, names: &[&str]) -> Self {
         self.member_filter = Some(names.iter().map(|s| s.to_string()).collect());
         self

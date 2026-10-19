@@ -19,3 +19,10 @@ fn every_member_has_its_manifest_root_and_targets() {
 fn folder_scans_have_no_packages() {
     assert!(app_folder().packages.is_empty());
 }
+
+#[test]
+fn the_builder_has_the_packages_before_parsing() {
+    let b = klepto::Klepto::new("app").scan_workspace_root(fixture("ws")).expect("metadata");
+    assert!(b.packages().contains_key("app"));
+    assert!(b.packages().contains_key("mydep"));
+}
