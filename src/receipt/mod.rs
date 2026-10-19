@@ -224,7 +224,17 @@ impl Receipt {
         let mut functions: Vec<CapturedFn> = k.functions.iter().map(|f| CapturedFn { location: rl.loc(&f.location), ..f.clone() }).collect();
         functions.sort_by(|a, b| (&a.fq_name, loc_key(&a.location)).cmp(&(&b.fq_name, loc_key(&b.location))));
 
-        let mut types: Vec<TypeDecl> = k.types.iter().map(|t| TypeDecl { location: rl.loc(&t.location), ..t.clone() }).collect();
+        let mut types: Vec<TypeDecl> = k
+            .types
+            .iter()
+            .map(|t| {
+                let mut t = TypeDecl { location: rl.loc(&t.location), ..t.clone() };
+                for v in &mut t.variants {
+                    v.location = v.location.as_ref().map(|l| rl.loc(l));
+                }
+                t
+            })
+            .collect();
         types.sort_by(|a, b| a.id.cmp(&b.id));
         let mut impls: Vec<ImplDecl> = k.impls.iter().map(|i| ImplDecl { location: rl.loc(&i.location), ..i.clone() }).collect();
         impls.sort_by(|a, b| a.id.cmp(&b.id));

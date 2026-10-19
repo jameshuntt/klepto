@@ -266,6 +266,10 @@ pub struct MacroInvocation {
     pub resolution: Option<Resolution>,
     #[serde(default)]
     pub cfg: CfgPredicate,
+    /// The macro's tokens as written, for a consumer that reads a table a
+    /// macro declares (`liaise_codes! { prefix: "X", Code { A = 1 => "..." } }`).
+    #[serde(default)]
+    pub tokens: String,
     /// Paths written inside the macro's tokens (`a::b` and single
     /// identifiers), as written: an unexpanded macro's arguments are tokens,
     /// so these are named there but never resolved.

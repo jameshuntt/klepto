@@ -71,6 +71,13 @@ pub struct VariantDecl {
     /// `= 0` as written.
     pub discriminant: Option<String>,
     pub cfg: CfgPredicate,
+    /// Where the variant is declared.
+    #[serde(default)]
+    pub location: Option<crate::model::FileLocation>,
+    /// Its attributes other than docs: `(path, argument tokens)`, as written
+    /// (`("liaise", "code = 1, msg = \"...\"")`).
+    #[serde(default)]
+    pub attrs: Vec<(String, String)>,
 }
 
 /// A trait's method declaration.

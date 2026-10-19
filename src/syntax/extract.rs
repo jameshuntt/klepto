@@ -1007,6 +1007,20 @@ pub fn extract_occurrences(
                                 fields: field_decls(v.fields.iter(), &cfg),
                                 discriminant: v.discriminant.as_ref().map(|(_, x)| x.to_token_stream().to_string()),
                                 cfg,
+                                location: Some(self.location(v.ident.span())),
+                                attrs: v
+                                    .attrs
+                                    .iter()
+                                    .filter(|a| !a.path().is_ident("doc"))
+                                    .map(|a| {
+                                        let args = match &a.meta {
+                                            syn::Meta::Path(_) => String::new(),
+                                            syn::Meta::List(l) => l.tokens.to_string(),
+                                            syn::Meta::NameValue(nv) => nv.value.to_token_stream().to_string(),
+                                        };
+                                        (path_to_string(a.path()), args)
+                                    })
+                                    .collect(),
                             }
                         })
                         .collect();
@@ -1138,6 +1152,7 @@ pub fn extract_occurrences(
                     enclosing_item: self.item(),
                     resolution: None,
                     cfg,
+                    tokens: String::new(),
                     token_paths: Vec::new(),
                 });
             }
@@ -1185,6 +1200,7 @@ pub fn extract_occurrences(
                 enclosing_item: self.item(),
                 resolution: None,
                 cfg,
+                tokens: mac.tokens.to_string(),
                 token_paths: paths_in_tokens(&mac.tokens),
             });
             let name = segs.join("::");

@@ -141,3 +141,15 @@ fn a_path_knows_whether_it_builds_or_matches() {
     // `Mode::Serving` in a match arm is a pattern
     assert!(k.paths.iter().any(|p| p.path == "Mode::Serving" && p.enclosing_fn.as_deref() == Some("app::serving") && p.role == PathRole::Pattern));
 }
+
+#[test]
+fn a_variant_keeps_its_attributes_and_place_and_a_macro_its_tokens() {
+    let k = literals();
+    let mode = k.types.iter().find(|t| t.id == "app::Mode").expect("Mode");
+    let serving = &mode.variants[0];
+    assert_eq!(serving.name, "Serving");
+    assert!(serving.location.as_ref().and_then(|l| l.line).is_some());
+    assert!(serving.attrs.is_empty());
+    let printed = k.macros_inv.iter().find(|m| m.name == "println").expect("println!");
+    assert_eq!(printed.tokens, "\"{} {}\" , a , \"APP_PRINTED\"");
+}
