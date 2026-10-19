@@ -673,8 +673,12 @@ pub(crate) struct Resolver {
     /// through the module's globs is a cycle, and stays unresolved). Without
     /// it a module with two globs whose roots are unknown re-resolves each
     /// one through the other until `MAX_DEPTH`, 2^32 times.
-    glob_targets: RefCell<HashMap<(String, Vec<String>, bool), Option<Resolution>>>,
+    glob_targets: RefCell<HashMap<GlobKey, Option<Resolution>>>,
 }
+
+/// A glob import as `glob_targets` keys it: the module it is in, the path it
+/// names, and whether that path is absolute.
+type GlobKey = (String, Vec<String>, bool);
 
 const MAX_DEPTH: u32 = 32;
 

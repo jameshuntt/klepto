@@ -202,3 +202,9 @@ deterministic, and a crate of a few hundred files takes seconds.
 `scan_workspace_root`, `exclude_generated`, `parse`, `dep_use_sites`,
 `internal_use_sites`, `imports` are the contract earlier consumers rely on
 and are kept stable. Everything since 0.1.3 is additive.
+
+## Releasing
+
+Bump `version` in Cargo.toml and give CHANGELOG.md a dated `## <version> (YYYY-MM-DD)` entry, then push to main.
+CI (`.github/workflows/ci.yml`) tests on stable and Rust 1.85, runs clippy, and publishes to crates.io
+through trusted publishing; a version already on crates.io, or an entry still marked `(unreleased)`, publishes nothing.
