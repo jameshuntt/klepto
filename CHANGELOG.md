@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.3.1 (pending, not published)
+## 0.3.1 (2026-10-19)
 
 Four things a consumer reading a workspace needed (literals with their calls, packages, matches, a fingerprint), and two that kept klepto from finishing on a large workspace. Built against the kit's workspace (1,936 files, about a million lines): before, it did not finish (one run passed 100 GB of memory on five members); now the whole workspace parses in 28 s at 5.4 GB, dependency macros expanded and std expression macros read.
 
