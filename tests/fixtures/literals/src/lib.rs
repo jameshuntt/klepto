@@ -1,0 +1,17 @@
+pub const ENV_SOCKET: &str = "APP_SOCKET";
+
+pub fn env_or(key: &str, default: &str) -> String {
+    std::env::var(key).unwrap_or_else(|_| default.to_string())
+}
+
+pub fn read() -> String {
+    let a = std::env::var("APP_KEY").unwrap_or_default();
+    let b = env_or(ENV_SOCKET, "/run/app.sock");
+    println!("{} {}", a, "APP_PRINTED");
+    format!("{a}{b}")
+}
+
+/// "APP_IN_DOC" is a doc comment, not code.
+pub fn names() -> [&'static str; 1] {
+    ["APP_NAMED"]
+}

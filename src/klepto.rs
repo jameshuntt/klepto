@@ -80,6 +80,9 @@ pub struct Klepto {
     /// Cargo feature model per scanned package; empty for
     /// `scan_in_folder` / `scan_file`.
     pub features: BTreeMap<String, FeatureModel>,
+    /// Every workspace member with its manifest and targets (the member
+    /// filter does not apply); empty for `scan_in_folder` / `scan_file`.
+    pub packages: BTreeMap<String, PackageInfo>,
 
     pub no_std_detected: bool,
 
@@ -96,6 +99,9 @@ pub struct Klepto {
     /// Files that failed to parse and were skipped because
     /// `ignore_parse_errors(true)` was set, with the parser's message.
     pub skipped_files: Vec<(PathBuf, String)>,
+
+    /// String literals in code, each with the call it is an argument of.
+    pub literals: Vec<LiteralOccurrence>,
 
     /// Single-identifier paths waiting for the resolver; drained by the resolver.
     pub(crate) pending_singles: Vec<PathOccurrence>,
@@ -169,6 +175,7 @@ pub struct KleptoBuilder {
     package_roots: Vec<PackageRoot>,
     package_deps: BTreeMap<String, BTreeSet<String>>,
     features: BTreeMap<String, FeatureModel>,
+    packages: BTreeMap<String, PackageInfo>,
     /// `src` dirs of dependencies (name, dir) for `#[macro_export]`
     /// harvesting; empty when the lockfile cannot be resolved offline.
     dep_sources: Vec<(String, PathBuf)>,
@@ -242,6 +249,24 @@ impl KleptoBuilder {
             // Always collect workspace member roots + deps (regardless of member_filter)
             let pkg_name = norm_crate_root(&pkg.name);
             self.workspace_members.insert(pkg_name.clone());
+            let manifest_path = pkg.manifest_path.clone().into_std_path_buf();
+            self.packages.insert(
+                pkg_name.clone(),
+                PackageInfo {
+                    name: pkg_name.clone(),
+                    cargo_name: pkg.name.clone(),
+                    version: pkg.version.to_string(),
+                    root: manifest_path.parent().map(Path::to_path_buf).unwrap_or_default(),
+                    manifest_path,
+                    targets: pkg
+                        .targets
+                        .iter()
+                        .flat_map(|t| {
+                            t.kind.iter().map(move |k| TargetInfo { name: t.name.clone(), kind: k.clone(), src_path: t.src_path.clone().into_std_path_buf() })
+                        })
+                        .collect(),
+                },
+            );
             let deps = self.package_deps.entry(pkg_name.clone()).or_default();
             for dep in &pkg.dependencies {
                 let d = norm_crate_root(&dep.name);
@@ -448,6 +473,7 @@ impl KleptoBuilder {
         let mut items = Vec::new();
         let mut types = Vec::new();
         let mut impls = Vec::new();
+        let mut literals = Vec::new();
 
         let mut no_std_detected = false;
         let mut index = crate::syntax::index::EnclosingIndex::default();
@@ -478,6 +504,7 @@ impl KleptoBuilder {
             items.extend(occ.items);
             types.extend(occ.types);
             impls.extend(occ.impls);
+            literals.extend(occ.literals);
 
             index = index.merge(crate::syntax::index::EnclosingIndex::build(&package, &segs, &pf.path, &pf.ast));
         }
@@ -503,6 +530,7 @@ impl KleptoBuilder {
             graph: ItemGraph::default(),
             package_deps: self.package_deps,
             features: self.features,
+            packages: self.packages,
             no_std_detected,
             expansions,
             macros_known,
@@ -510,13 +538,42 @@ impl KleptoBuilder {
             root: self.scan_root.clone(),
             index,
             skipped_files,
+            literals,
             pending_singles,
         };
         crate::resolve::resolve_all(&mut k);
         crate::typing::types::resolve_types(&mut k);
         crate::typing::methods::resolve_method_calls(&mut k);
+        link_arguments(&mut k);
         k.graph = crate::graph::build_item_graph(&k);
         Ok(k)
+    }
+}
+
+/// Copies each call's resolution onto the literals and paths written in its
+/// arguments, matched by the call's location, kind and (for a method, which
+/// starts where its receiver does) name.
+fn link_arguments(k: &mut Klepto) {
+    type Key = (PathBuf, Option<u32>, Option<u32>, bool, String);
+    let key = |loc: &crate::model::FileLocation, is_method: bool, callee: &str| -> Key {
+        (loc.path.clone(), loc.line, loc.column, is_method, if is_method { callee.to_string() } else { String::new() })
+    };
+    let mut by_call: std::collections::HashMap<Key, crate::model::Resolution> = std::collections::HashMap::new();
+    for c in &k.calls {
+        if let Some(r) = &c.resolution {
+            by_call.entry(key(&c.location, c.is_method, &c.callee)).or_insert_with(|| r.clone());
+        }
+    }
+    let fill = |a: &mut Option<crate::model::ArgOf>| {
+        if let Some(a) = a {
+            a.resolution = by_call.get(&key(&a.location, a.is_method, &a.callee)).cloned();
+        }
+    };
+    for l in &mut k.literals {
+        fill(&mut l.arg_of);
+    }
+    for p in &mut k.paths {
+        fill(&mut p.arg_of);
     }
 }
 

@@ -70,6 +70,34 @@ enum D<'a> {
     Unknown,
 }
 
+/// The most nodes a local's descriptor keeps. A local bound from another
+/// local repeats that one's whole descriptor (`let b = a.f(a)`), so a run of
+/// such `let`s doubles at each step; past this size the local is `Unknown`:
+/// its method calls stay unresolved, nothing is claimed.
+const MAX_DESCRIPTOR: usize = 512;
+
+impl D<'_> {
+    /// Whether the descriptor has at most `budget` nodes (stops counting past it).
+    fn fits(&self, budget: &mut usize) -> bool {
+        if *budget == 0 {
+            return false;
+        }
+        *budget -= 1;
+        match self {
+            D::Call(_, args) | D::Tuple(args) => args.iter().all(|a| a.fits(budget)),
+            D::Method { recv, args, .. } => recv.fits(budget) && args.iter().all(|a| a.fits(budget)),
+            D::Closure { body: d, .. } | D::Field(d, _) | D::Try(d) | D::Index(d) | D::Array(d) | D::Proj(d, _) => d.fits(budget),
+            D::SelfRecv | D::Ty(_) | D::Value(_) | D::Lit(_) | D::Typed(_) | D::Unknown => true,
+        }
+    }
+
+    /// The descriptor, or `Unknown` when it is larger than `MAX_DESCRIPTOR`.
+    fn capped(self) -> Self {
+        let mut budget = MAX_DESCRIPTOR;
+        if self.fits(&mut budget) { self } else { D::Unknown }
+    }
+}
+
 #[derive(Clone)]
 enum Proj {
     OptElem,
@@ -462,7 +490,7 @@ impl<'a, 'k> W<'a, 'k> {
 
     fn bind(&mut self, name: String, d: D<'a>) {
         if let Some(scope) = self.frames.last_mut().and_then(|f| f.scopes.last_mut()) {
-            scope.push((name, d));
+            scope.push((name, d.capped()));
         }
     }
 
@@ -608,10 +636,13 @@ impl<'a, 'k> W<'a, 'k> {
         for s in &b.stmts {
             if let syn::Stmt::Local(l) = s {
                 let init = l.init.as_ref().map(|i| self.descriptor(&i.expr)).unwrap_or(D::Unknown);
-                let binds = match &l.pat {
+                let binds: Vec<(String, D<'a>)> = match &l.pat {
                     syn::Pat::Type(pt) => pattern_bindings(&pt.pat, D::Ty(&pt.ty)),
                     other => pattern_bindings(other, init),
-                };
+                }
+                .into_iter()
+                .map(|(n, d)| (n, d.capped()))
+                .collect();
                 layer.extend(binds.iter().cloned());
                 if let Some(top) = self.overlay.borrow_mut().last_mut() {
                     top.extend(binds);

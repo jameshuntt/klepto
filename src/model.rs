@@ -266,6 +266,49 @@ pub struct MacroInvocation {
     pub resolution: Option<Resolution>,
     #[serde(default)]
     pub cfg: CfgPredicate,
+    /// Paths written inside the macro's tokens (`a::b` and single
+    /// identifiers), as written: an unexpanded macro's arguments are tokens,
+    /// so these are named there but never resolved.
+    #[serde(default)]
+    pub token_paths: Vec<String>,
+}
+
+/// The call (or method call) a literal or a path is written in the
+/// arguments of: the innermost one, the argument expression searched whole.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ArgOf {
+    /// The callee as written (`std::env::var`, `env_or`), or the method name.
+    pub callee: String,
+    pub is_method: bool,
+    /// The call's location, the same as its `CallOccurrence`'s.
+    pub location: FileLocation,
+    /// The call's resolution, copied from its `CallOccurrence` once resolved.
+    #[serde(default)]
+    pub resolution: Option<Resolution>,
+}
+
+/// A string literal (`"NODEPLAN_X"`, `r"..."`) in code: in an expression,
+/// a `const`/`static` initialiser, or an unexpanded macro's tokens.
+/// Attributes (doc comments included) are not code and are not recorded.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct LiteralOccurrence {
+    pub value: String,
+    pub module_path: Vec<String>,
+    pub location: FileLocation,
+    #[serde(default)]
+    pub enclosing_fn: Option<String>,
+    /// Innermost enclosing item id (the `const` it initialises, the fn it
+    /// sits in); `None` at module level.
+    #[serde(default)]
+    pub enclosing_item: Option<String>,
+    #[serde(default)]
+    pub arg_of: Option<ArgOf>,
+    /// The macro whose tokens hold it (`format`, `println`), when klepto
+    /// did not expand that macro.
+    #[serde(default)]
+    pub in_macro: Option<String>,
+    #[serde(default)]
+    pub cfg: CfgPredicate,
 }
 
 /// Which namespace a path is looked up in: a type position, a
@@ -301,6 +344,9 @@ pub struct PathOccurrence {
     /// The namespace of the position the path is written in.
     #[serde(default)]
     pub ns: Namespace,
+    /// The call it is written in the arguments of, if any.
+    #[serde(default)]
+    pub arg_of: Option<ArgOf>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -452,4 +498,37 @@ pub struct UseSite {
     pub scope: String,   // enclosing fn fq_name, else module path ("app::query")
 }
 pub type UseSites = BTreeMap<String, BTreeMap<String, usize>>;
+
+/// A workspace member as cargo metadata states it.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct PackageInfo {
+    /// `-` → `_`, as every other record names packages.
+    pub name: String,
+    /// The name as `Cargo.toml` spells it.
+    pub cargo_name: String,
+    pub version: String,
+    pub manifest_path: PathBuf,
+    /// The directory holding the manifest.
+    pub root: PathBuf,
+    /// Lib, bin, test, example, bench and build-script targets.
+    pub targets: Vec<TargetInfo>,
+}
+
+/// One cargo target of a package.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct TargetInfo {
+    pub name: String,
+    /// `lib`, `bin`, `proc-macro`, `test`, `example`, `bench`, `custom-build`, ...
+    pub kind: String,
+    pub src_path: PathBuf,
+}
+
+impl PackageInfo {
+    /// The names of its `bin` targets, sorted.
+    pub fn bins(&self) -> Vec<String> {
+        let mut v: Vec<String> = self.targets.iter().filter(|t| t.kind == "bin").map(|t| t.name.clone()).collect();
+        v.sort();
+        v
+    }
+}
 pub type UseSitesCount = UseSites;

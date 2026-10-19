@@ -794,6 +794,8 @@ pub struct Occurrences {
     pub types: Vec<crate::typing::types::TypeDecl>,
     /// Impl records, unresolved until `resolve_types`.
     pub impls: Vec<crate::typing::types::ImplDecl>,
+    /// String literals in code.
+    pub literals: Vec<LiteralOccurrence>,
 }
 
 /// Macro invocations, path and call occurrences, attributes, `extern crate`
@@ -841,6 +843,8 @@ pub fn extract_occurrences(
         // Generating macro per item on the stack (inherited by nested items)
         generated_stack: Vec<Option<String>>,
         pending_generated: Option<String>,
+        // Calls whose arguments are being visited, innermost last
+        arg_stack: Vec<ArgOf>,
 
         out: Occurrences,
     }
@@ -1124,7 +1128,36 @@ pub fn extract_occurrences(
                     enclosing_item: self.item(),
                     resolution: None,
                     cfg,
+                    token_paths: Vec::new(),
                 });
+            }
+        }
+
+        fn push_literal(&mut self, value: String, span: Span, in_macro: Option<String>) {
+            self.out.literals.push(LiteralOccurrence {
+                value,
+                module_path: self.mod_stack.clone(),
+                location: self.location(span),
+                enclosing_fn: self.current_fn.clone(),
+                enclosing_item: self.item(),
+                arg_of: self.arg_stack.last().cloned(),
+                in_macro,
+                cfg: self.cfg(),
+            });
+        }
+
+        /// String literals inside an unexpanded macro's tokens.
+        fn literals_in_tokens(&mut self, ts: &TokenStream, name: &str) {
+            for tt in ts.clone() {
+                match tt {
+                    TokenTree::Group(g) => self.literals_in_tokens(&g.stream(), name),
+                    TokenTree::Literal(l) => {
+                        if let Ok(s) = syn::parse_str::<syn::LitStr>(&l.to_string()) {
+                            self.push_literal(s.value(), l.span(), Some(name.to_string()));
+                        }
+                    }
+                    _ => {}
+                }
             }
         }
 
@@ -1142,7 +1175,10 @@ pub fn extract_occurrences(
                 enclosing_item: self.item(),
                 resolution: None,
                 cfg,
+                token_paths: paths_in_tokens(&mac.tokens),
             });
+            let name = segs.join("::");
+            self.literals_in_tokens(&mac.tokens, &name);
         }
 
         fn push_attr(&mut self, path: String, args: &TokenStream, predicate: Option<CfgPredicate>, cfg: CfgPredicate, span: Span) {
@@ -1588,6 +1624,7 @@ pub fn extract_occurrences(
                 resolution: None,
                 cfg: self.cfg(),
                 ns: self.ns(),
+                arg_of: self.arg_stack.last().cloned(),
             };
 
             if s.contains("::") || matches!(s.as_str(), "std" | "core" | "alloc") {
@@ -1599,6 +1636,10 @@ pub fn extract_occurrences(
             }
 
             syn::visit::visit_path(self, p);
+        }
+
+        fn visit_lit_str(&mut self, s: &'ast syn::LitStr) {
+            self.push_literal(s.value(), s.span(), None);
         }
 
         fn visit_expr_method_call(&mut self, m: &'ast syn::ExprMethodCall) {
@@ -1616,7 +1657,20 @@ pub fn extract_occurrences(
                 receiver_type: None,
                 cfg,
             });
-            syn::visit::visit_expr_method_call(self, m);
+            // as `syn::visit::visit_expr_method_call`, the arguments under this call
+            for a in &m.attrs {
+                self.visit_attribute(a);
+            }
+            self.visit_expr(&m.receiver);
+            self.visit_ident(&m.method);
+            if let Some(t) = &m.turbofish {
+                self.visit_angle_bracketed_generic_arguments(t);
+            }
+            self.arg_stack.push(ArgOf { callee: m.method.to_string(), is_method: true, location: self.location(m.span()), resolution: None });
+            for a in &m.args {
+                self.visit_expr(a);
+            }
+            self.arg_stack.pop();
         }
 
         fn visit_expr_call(&mut self, c: &'ast syn::ExprCall) {
@@ -1634,7 +1688,20 @@ pub fn extract_occurrences(
                 receiver_type: None,
                 cfg,
             });
-            syn::visit::visit_expr_call(self, c);
+            // as `syn::visit::visit_expr_call`, the arguments under this call
+            for a in &c.attrs {
+                self.visit_attribute(a);
+            }
+            self.visit_expr(&c.func);
+            let callee = match &*c.func {
+                syn::Expr::Path(p) => path_string(&p.path),
+                other => other.to_token_stream().to_string(),
+            };
+            self.arg_stack.push(ArgOf { callee, is_method: false, location: self.location(c.span()), resolution: None });
+            for a in &c.args {
+                self.visit_expr(a);
+            }
+            self.arg_stack.pop();
         }
     }
 

@@ -47,6 +47,20 @@ level and inside bodies), macro definitions and invocations, paths, calls,
 attributes with their argument paths, `extern crate`. Unparsable files are
 skipped and listed when you ask for that (`ignore_parse_errors(true)`).
 
+**String literals.** Every string literal in code (`"NODEPLAN_X"`, raw
+strings, the tokens of a macro klepto did not expand), with its enclosing
+function and item (a `const` it initialises is its item) and `arg_of`: the
+innermost call or method call it is an argument of, with that call's
+resolution. Paths carry `arg_of` too, and every macro invocation lists the
+paths written in its tokens (`token_paths`), named there but never
+resolved. Doc comments and attribute arguments are not code and are not
+recorded. This is what a reader of an env key needs: `std::env::var(KEY)`
+and `env_or("KEY", ..)` are the literal or the constant, and the call.
+
+**Packages.** `Klepto::packages`: every workspace member as cargo metadata
+states it — its name both ways, version, manifest, directory and targets
+(`bins()` for its binaries).
+
 **Layer 1 — resolution.** The module tree (`mod x;`, `#[path]`, inline
 modules, `mod.rs` and `x.rs` styles, orphans), per-module alias tables, and
 one `Resolution` per occurrence: `Local("app::store::Engine")`,

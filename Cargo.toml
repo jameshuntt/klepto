@@ -1,6 +1,6 @@
 [package]
 name = "klepto"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 rust-version = "1.85"
 
@@ -12,7 +12,7 @@ categories = ["development-tools"]
 authors = ["James Hunt <james@1o.business>"]
 repository = "https://github.com/jameshuntt/klepto"
 
-include = ["src/**", "Cargo.toml", "LICENSE*", "README*"]
+include = ["src/**", "Cargo.toml", "LICENSE*", "README*", "CHANGELOG*"]
 
 [features]
 default = ["span-locations"]

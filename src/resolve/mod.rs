@@ -655,6 +655,12 @@ pub(crate) struct Resolver {
     /// Set by `pick` when the chosen twin's siblings cover every
     /// build; read (and cleared) by `resolve_all` per occurrence.
     covered: std::cell::Cell<bool>,
+    /// What each glob import of a module names, resolved once per module
+    /// (`None` while it is being resolved: a glob whose own path can only come
+    /// through the module's globs is a cycle, and stays unresolved). Without
+    /// it a module with two globs whose roots are unknown re-resolves each
+    /// one through the other until `MAX_DEPTH`, 2^32 times.
+    glob_targets: RefCell<HashMap<(String, Vec<String>, bool), Option<Resolution>>>,
 }
 
 const MAX_DEPTH: u32 = 32;
@@ -858,7 +864,18 @@ impl Resolver {
     fn via_globs(&self, sc: &Scope, s0: &str, rest: &[String], cx: &Ctx, depth: u32) -> Option<Resolution> {
         let mut entries: Vec<(String, bool)> = Vec::new(); // (candidate, is a verified local hit)
         for (target, abs) in &sc.globs {
-            let t = self.resolve(target, *abs, &Ctx { module: cx.module, package: cx.package, enclosing_fn: None, ns: Namespace::Any, cfg: None }, depth + 1);
+            let key = (cx.module.to_string(), target.clone(), *abs);
+            let cached = self.glob_targets.borrow().get(&key).cloned();
+            let t = match cached {
+                Some(Some(r)) => r,
+                Some(None) => unresolved("", UnresolvedReason::UnknownName),
+                None => {
+                    self.glob_targets.borrow_mut().insert(key.clone(), None);
+                    let r = self.resolve(target, *abs, &Ctx { module: cx.module, package: cx.package, enclosing_fn: None, ns: Namespace::Any, cfg: None }, depth + 1);
+                    self.glob_targets.borrow_mut().insert(key, Some(r.clone()));
+                    r
+                }
+            };
             match t {
                 Resolution::Local(m) => {
                     if self.modules.get(&m).is_some_and(|mi| mi.items.contains_key(s0)) {
@@ -1090,6 +1107,7 @@ pub(crate) fn build_resolver(k: &Klepto) -> Resolver {
         default_envs: k.features.iter().map(|(p, m)| (p.clone(), m.default_env())).collect(),
         feature_models: k.features.clone(),
         covered: std::cell::Cell::new(false),
+        glob_targets: RefCell::new(HashMap::new()),
     }
 }
 
