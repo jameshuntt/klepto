@@ -102,6 +102,8 @@ pub struct Klepto {
 
     /// String literals in code, each with the call it is an argument of.
     pub literals: Vec<LiteralOccurrence>,
+    /// `match` expressions with their arms' pattern paths, resolved.
+    pub matches: Vec<MatchOccurrence>,
 
     /// Single-identifier paths waiting for the resolver; drained by the resolver.
     pub(crate) pending_singles: Vec<PathOccurrence>,
@@ -353,7 +355,8 @@ impl KleptoBuilder {
     /// Do not read dependency sources for `#[macro_export]` macros.
     pub fn skip_dependency_macros(mut self, yes: bool) -> Self { self.no_dep_macros = yes; self }
 
-    pub fn parse(self) -> Result<Klepto, KleptoError> {
+    /// The `.rs` files `parse` would read, newest first.
+    fn candidates(&self) -> Result<Vec<(PathBuf, SystemTime)>, KleptoError> {
         let include: GlobSet = self.include.build()?;
         let exclude: GlobSet = self.exclude.build()?;
 
@@ -378,6 +381,36 @@ impl KleptoBuilder {
         candidates.sort_by_key(|(_, m)| *m);
         candidates.reverse();
         if let Some(n) = self.only_newest { candidates.truncate(n); }
+        Ok(candidates)
+    }
+
+    /// The files this scan would read (its `.rs` files, every member's
+    /// manifest, the root manifest and lockfile) with the blake3 of each,
+    /// without parsing anything: equal fingerprints, equal scans.
+    pub fn fingerprint(&self) -> Result<Fingerprint, KleptoError> {
+        let mut paths: Vec<PathBuf> = self.candidates()?.into_iter().map(|(p, _)| p).collect();
+        paths.extend(self.packages.values().map(|p| p.manifest_path.clone()));
+        if let Some(root) = &self.scan_root {
+            paths.extend([root.join("Cargo.toml"), root.join("Cargo.lock")].into_iter().filter(|p| p.is_file()));
+        }
+        paths.sort();
+        paths.dedup();
+        let mut files = Vec::with_capacity(paths.len());
+        let mut all = blake3::Hasher::new();
+        for p in paths {
+            let bytes = std::fs::read(&p).map_err(|e| KleptoError::Io { path: p.clone(), source: e })?;
+            let hash = blake3::hash(&bytes).to_hex().to_string();
+            all.update(p.to_string_lossy().as_bytes());
+            all.update(b"\0");
+            all.update(hash.as_bytes());
+            all.update(b"\n");
+            files.push((p, hash));
+        }
+        Ok(Fingerprint { files, digest: all.finalize().to_hex().to_string() })
+    }
+
+    pub fn parse(self) -> Result<Klepto, KleptoError> {
+        let candidates = self.candidates()?;
 
         let mut files = Vec::new();
         let mut skipped_files = Vec::new();
@@ -474,6 +507,7 @@ impl KleptoBuilder {
         let mut types = Vec::new();
         let mut impls = Vec::new();
         let mut literals = Vec::new();
+        let mut matches = Vec::new();
 
         let mut no_std_detected = false;
         let mut index = crate::syntax::index::EnclosingIndex::default();
@@ -505,6 +539,7 @@ impl KleptoBuilder {
             types.extend(occ.types);
             impls.extend(occ.impls);
             literals.extend(occ.literals);
+            matches.extend(occ.matches);
 
             index = index.merge(crate::syntax::index::EnclosingIndex::build(&package, &segs, &pf.path, &pf.ast));
         }
@@ -539,6 +574,7 @@ impl KleptoBuilder {
             index,
             skipped_files,
             literals,
+            matches,
             pending_singles,
         };
         crate::resolve::resolve_all(&mut k);
@@ -574,6 +610,20 @@ fn link_arguments(k: &mut Klepto) {
     }
     for p in &mut k.paths {
         fill(&mut p.arg_of);
+    }
+    // an arm's pattern path takes the resolution of the path occurrence written there
+    let mut at: std::collections::HashMap<(PathBuf, Option<u32>, Option<u32>, String), crate::model::Resolution> = std::collections::HashMap::new();
+    for p in &k.paths {
+        if let Some(r) = &p.resolution {
+            at.entry((p.location.path.clone(), p.location.line, p.location.column, p.path.clone())).or_insert_with(|| r.clone());
+        }
+    }
+    for m in &mut k.matches {
+        for arm in &mut m.arms {
+            for ap in &mut arm.paths {
+                ap.resolution = at.get(&(ap.location.path.clone(), ap.location.line, ap.location.column, ap.path.clone())).cloned();
+            }
+        }
     }
 }
 

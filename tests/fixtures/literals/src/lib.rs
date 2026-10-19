@@ -15,3 +15,23 @@ pub fn read() -> String {
 pub fn names() -> [&'static str; 1] {
     ["APP_NAMED"]
 }
+
+pub enum Mode {
+    Serving,
+    ReadOnly,
+    Maintenance,
+}
+
+pub fn label(m: &Mode) -> &'static str {
+    match m {
+        Mode::Serving => "serving",
+        Mode::ReadOnly | Mode::Maintenance => "not serving",
+    }
+}
+
+pub fn serving(m: &Mode) -> bool {
+    match m {
+        Mode::Serving => true,
+        _ => false,
+    }
+}

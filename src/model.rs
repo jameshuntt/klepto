@@ -499,6 +499,54 @@ pub struct UseSite {
 }
 pub type UseSites = BTreeMap<String, BTreeMap<String, usize>>;
 
+/// A `match` expression: where it is, what it matches on as written, and
+/// each arm's pattern paths with klepto's resolution of them (the enum
+/// variants, constants and structs an arm names).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MatchOccurrence {
+    pub module_path: Vec<String>,
+    pub location: FileLocation,
+    #[serde(default)]
+    pub enclosing_fn: Option<String>,
+    #[serde(default)]
+    pub enclosing_item: Option<String>,
+    /// The scrutinee's tokens, at most 160 characters.
+    pub scrutinee: String,
+    pub arms: Vec<MatchArm>,
+    #[serde(default)]
+    pub cfg: CfgPredicate,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MatchArm {
+    pub location: FileLocation,
+    /// `_`, or a lowercase binding with no sub-pattern: the arm takes
+    /// whatever the earlier arms did not.
+    pub catch_all: bool,
+    pub paths: Vec<ArmPath>,
+}
+
+/// A path written in an arm's pattern.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ArmPath {
+    pub path: String,
+    pub location: FileLocation,
+    /// Copied from the path's own occurrence once resolved.
+    #[serde(default)]
+    pub resolution: Option<Resolution>,
+}
+
+/// The files a scan would read and their digests, without parsing: what
+/// changed between two readings of the same code, cheaply.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct Fingerprint {
+    /// Every `.rs` file the scan reads and every manifest it reads, with the
+    /// blake3 of its bytes (hex), sorted by path.
+    pub files: Vec<(PathBuf, String)>,
+    /// blake3 over `path NUL hash LF` of every file, in order.
+    pub digest: String,
+}
+
 /// A workspace member as cargo metadata states it.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct PackageInfo {

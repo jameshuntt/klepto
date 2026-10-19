@@ -57,6 +57,13 @@ resolved. Doc comments and attribute arguments are not code and are not
 recorded. This is what a reader of an env key needs: `std::env::var(KEY)`
 and `env_or("KEY", ..)` are the literal or the constant, and the call.
 
+**Matches.** `Klepto::matches`: every `match` with its scrutinee as
+written and each arm's pattern paths, resolved, and whether the arm is a
+catch-all.
+
+**Fingerprint.** `KleptoBuilder::fingerprint`: the files a scan would read,
+with their blake3 digests and one digest over them, without parsing.
+
 **Packages.** `Klepto::packages`: every workspace member as cargo metadata
 states it — its name both ways, version, manifest, directory and targets
 (`bins()` for its binaries).

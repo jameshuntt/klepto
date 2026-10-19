@@ -796,6 +796,8 @@ pub struct Occurrences {
     pub impls: Vec<crate::typing::types::ImplDecl>,
     /// String literals in code.
     pub literals: Vec<LiteralOccurrence>,
+    /// `match` expressions and their arms' pattern paths.
+    pub matches: Vec<MatchOccurrence>,
 }
 
 /// Macro invocations, path and call occurrences, attributes, `extern crate`
@@ -845,6 +847,10 @@ pub fn extract_occurrences(
         pending_generated: Option<String>,
         // Calls whose arguments are being visited, innermost last
         arg_stack: Vec<ArgOf>,
+        // `match` expressions being visited (indexes into out.matches), innermost last
+        match_stack: Vec<usize>,
+        // (match, arm) whose pattern is being visited
+        arm_pattern: Option<(usize, usize)>,
 
         out: Occurrences,
     }
@@ -1321,10 +1327,49 @@ pub fn extract_occurrences(
             self.pop_cfg(pushed);
         }
 
+        fn visit_expr_match(&mut self, m: &'ast syn::ExprMatch) {
+            let mut scrutinee: String = m.expr.to_token_stream().to_string().chars().take(160).collect();
+            if scrutinee.len() >= 160 {
+                scrutinee.push('…');
+            }
+            self.out.matches.push(MatchOccurrence {
+                module_path: self.mod_stack.clone(),
+                location: self.location(m.span()),
+                enclosing_fn: self.current_fn.clone(),
+                enclosing_item: self.item(),
+                scrutinee,
+                arms: Vec::new(),
+                cfg: self.cfg(),
+            });
+            self.match_stack.push(self.out.matches.len() - 1);
+            syn::visit::visit_expr_match(self, m);
+            self.match_stack.pop();
+        }
+
         fn visit_arm(&mut self, a: &'ast syn::Arm) {
             let pushed = self.push_cfg(&a.attrs);
             self.locals.push(Self::local_names(&a.pat));
-            syn::visit::visit_arm(self, a);
+            // as `syn::visit::visit_arm`, with the pattern's paths recorded on the arm
+            for attr in &a.attrs {
+                self.visit_attribute(attr);
+            }
+            let outer = self.arm_pattern.take();
+            if let Some(&mi) = self.match_stack.last() {
+                let catch_all = match &a.pat {
+                    syn::Pat::Wild(_) => true,
+                    syn::Pat::Ident(pi) => pi.subpat.is_none() && pi.ident.to_string().chars().next().is_some_and(|c| c.is_lowercase() || c == '_'),
+                    _ => false,
+                };
+                let location = self.location(a.pat.span());
+                self.out.matches[mi].arms.push(MatchArm { location, catch_all, paths: Vec::new() });
+                self.arm_pattern = Some((mi, self.out.matches[mi].arms.len() - 1));
+            }
+            self.visit_pat(&a.pat);
+            self.arm_pattern = outer;
+            if let Some((_, guard)) = &a.guard {
+                self.visit_expr(guard);
+            }
+            self.visit_expr(&a.body);
             self.locals.pop();
             self.pop_cfg(pushed);
         }
@@ -1626,6 +1671,9 @@ pub fn extract_occurrences(
                 ns: self.ns(),
                 arg_of: self.arg_stack.last().cloned(),
             };
+            if let Some((mi, ai)) = self.arm_pattern {
+                self.out.matches[mi].arms[ai].paths.push(ArmPath { path: s.clone(), location: occ.location.clone(), resolution: None });
+            }
 
             if s.contains("::") || matches!(s.as_str(), "std" | "core" | "alloc") {
                 self.out.paths.push(occ);

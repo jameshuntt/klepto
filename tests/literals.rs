@@ -86,3 +86,39 @@ fn a_local_bound_from_locals_stays_small() {
     assert!(f_calls.iter().any(|c| matches!(&c.resolution, Some(Resolution::Local(m)) if m == "app::S::f")));
     assert!(f_calls.iter().all(|c| matches!(&c.resolution, Some(Resolution::Local(_)) | Some(Resolution::Unresolved { .. }))));
 }
+
+#[test]
+fn matches_record_their_arms_resolved() {
+    let k = literals();
+    let label = k.matches.iter().find(|m| m.enclosing_fn.as_deref() == Some("app::label")).expect("the match in label");
+    assert_eq!(label.scrutinee, "m");
+    assert_eq!(label.arms.len(), 2);
+    let names: Vec<Option<&Resolution>> = label.arms[1].paths.iter().map(|p| p.resolution.as_ref()).collect();
+    assert_eq!(names, vec![Some(&Resolution::Local("app::Mode::ReadOnly".into())), Some(&Resolution::Local("app::Mode::Maintenance".into()))]);
+    let serving = k.matches.iter().find(|m| m.enclosing_fn.as_deref() == Some("app::serving")).expect("the match in serving");
+    assert!(!serving.arms[0].catch_all);
+    assert!(serving.arms[1].catch_all);
+    assert!(serving.arms[1].paths.is_empty());
+}
+
+#[test]
+fn a_fingerprint_changes_with_the_code_and_only_then() {
+    let dir = std::env::temp_dir().join(format!("klepto_fingerprint_{}", std::process::id()));
+    std::fs::create_dir_all(dir.join("src")).unwrap();
+    std::fs::write(dir.join("src/lib.rs"), "pub fn a() {}\n").unwrap();
+    let fp = || Klepto::new("app").scan_in_folder(dir.join("src")).fingerprint().expect("fingerprint");
+    let one = fp();
+    assert_eq!(one.files.len(), 1);
+    assert_eq!(one, fp());
+    std::fs::write(dir.join("src/lib.rs"), "pub fn a() { let _ = 1; }\n").unwrap();
+    assert_ne!(one.digest, fp().digest);
+    let _ = std::fs::remove_dir_all(&dir);
+}
+
+#[test]
+fn a_workspace_fingerprint_reads_the_manifests() {
+    let fp = Klepto::new("app").scan_workspace_root(fixture("ws")).expect("metadata").fingerprint().expect("fingerprint");
+    assert!(fp.files.iter().any(|(p, _)| p.ends_with("ws/app/Cargo.toml")));
+    assert!(fp.files.iter().any(|(p, _)| p.ends_with("ws/Cargo.toml")));
+    assert!(fp.files.iter().any(|(p, _)| p.extension().is_some_and(|e| e == "rs")));
+}

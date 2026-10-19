@@ -2,7 +2,7 @@
 
 ## 0.3.1 (pending, not published)
 
-Two things a consumer reading the environment needed, and two that kept klepto from finishing on a large workspace. Built against the kit's workspace (1,936 files, about a million lines): before, it did not finish (one run passed 100 GB of memory on five members); now the whole workspace parses in 22 s at 4.8 GB, dependency macros expanded.
+Four things a consumer reading a workspace needed (literals with their calls, packages, matches, a fingerprint), and two that kept klepto from finishing on a large workspace. Built against the kit's workspace (1,936 files, about a million lines): before, it did not finish (one run passed 100 GB of memory on five members); now the whole workspace parses in 22 s at 4.8 GB, dependency macros expanded.
 
 ### String literals and the call they are an argument of
 
@@ -17,6 +17,14 @@ Two things a consumer reading the environment needed, and two that kept klepto f
 
 - `PackageInfo` / `TargetInfo` and `Klepto::packages`: every workspace member's name (both spellings), version, manifest path, directory and targets, from the cargo metadata `scan_workspace_root` already reads (src/model.rs, src/klepto.rs). A consumer no longer runs cargo metadata a second time to find a package's binaries.
 
+### Match expressions
+
+- `MatchOccurrence` and `Klepto::matches`: every `match` with its scrutinee as written and each arm's pattern paths, resolved from the path occurrences written there, and whether the arm is a catch-all (`_`, or a lowercase binding): src/model.rs, recorded at src/syntax/extract.rs (`visit_expr_match`, `visit_arm`), linked in src/klepto.rs (`link_arguments`). "Every match on this enum" is now a query over klepto's data.
+
+### Fingerprint
+
+- `KleptoBuilder::fingerprint`: the files a scan would read (its `.rs` files, every member's manifest, the root manifest and lockfile) with the blake3 of each and one digest over them, without parsing (src/klepto.rs). The file selection is `parse`'s own, moved into `candidates` so the two cannot disagree. Equal fingerprints mean the same scan; a consumer can reuse what it read before.
+
 ### Glob imports resolved once per module
 
 - A module with two or more glob imports whose roots nothing in scope binds resolved each glob's path through the module's other globs, and those through the first, until `MAX_DEPTH` (32): 2^32 resolutions for two globs. A module with two such globs never finished. [resolve/mod.rs L858-L875 at 0.3.0](https://github.com/jameshuntt/klepto/blob/8eace60/src/resolve/mod.rs#L858-L875).
@@ -30,6 +38,7 @@ Two things a consumer reading the environment needed, and two that kept klepto f
 ### Proof
 
 - tests/literals.rs (7 tests, fixtures tests/fixtures/literals, globcycle, doubling): a literal's call and the call's resolution (`std::env::var("APP_KEY")`, `env_or(ENV_SOCKET, "/run/app.sock")`), a const initialiser as the literal's item, a path argument's call, literals and paths in macro tokens, doc comments not recorded, four cyclic globs finishing with the name unresolved, forty doubling lets finishing with the first calls typed.
+- tests/literals.rs also: the arms of two matches on an enum, resolved, with the catch-all marked; a fingerprint equal on the same files and different after an edit; a workspace fingerprint holding its manifests (10 tests in the file).
 - tests/packages.rs (2 tests): members' manifests, roots and targets; none for a folder scan.
-- `cargo test`: 157 tests, all pass (148 before).
+- `cargo test`: 160 tests, all pass (148 before).
 - examples/scale.rs: time and memory on a workspace or some of its members.
