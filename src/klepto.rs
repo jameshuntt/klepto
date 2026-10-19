@@ -179,6 +179,11 @@ pub struct KleptoBuilder {
     /// Lib/bin target roots from cargo metadata; empty for
     /// `scan_in_folder` / `scan_file`.
     package_roots: Vec<PackageRoot>,
+    /// Test, example and bench targets: crate roots when their directories
+    /// are read (`include_tests` and the rest, in any order with the scan).
+    extra_targets: Vec<PackageRoot>,
+    /// Every member's directory, for the tests / examples / benches roots.
+    member_dirs: Vec<PathBuf>,
     package_deps: BTreeMap<String, BTreeSet<String>>,
     features: BTreeMap<String, FeatureModel>,
     packages: BTreeMap<String, PackageInfo>,
@@ -298,6 +303,13 @@ impl KleptoBuilder {
                         kind: kind.clone(),
                         file: t.src_path.clone().into_std_path_buf(),
                     });
+                } else if let Some(kind) = t.kind.iter().find(|k| matches!(k.as_str(), "test" | "example" | "bench")) {
+                    self.extra_targets.push(PackageRoot {
+                        package: pkg_name.clone(),
+                        target: t.name.clone(),
+                        kind: kind.clone(),
+                        file: t.src_path.clone().into_std_path_buf(),
+                    });
                 }
             }
 
@@ -310,13 +322,42 @@ impl KleptoBuilder {
         for m in members {
             if let Some(dir) = m.parent() {
                 self.roots.push(dir.join("src"));
-                if self.add_tests { self.roots.push(dir.join("tests")); }
-                if self.add_examples { self.roots.push(dir.join("examples")); }
-                if self.add_benches { self.roots.push(dir.join("benches")); }
+                self.member_dirs.push(dir.to_path_buf());
             }
         }
 
         Ok(self)
+    }
+
+    /// The roots read: the members' `src/`, then `tests/`, `examples/` and
+    /// `benches/` as asked (before or after the scan alike).
+    fn read_roots(&self) -> Vec<PathBuf> {
+        let mut roots = self.roots.clone();
+        for dir in &self.member_dirs {
+            if self.add_tests {
+                roots.push(dir.join("tests"));
+            }
+            if self.add_examples {
+                roots.push(dir.join("examples"));
+            }
+            if self.add_benches {
+                roots.push(dir.join("benches"));
+            }
+        }
+        roots
+    }
+
+    /// The crate roots: lib and bin targets, and the test / example / bench
+    /// targets whose directories are read.
+    fn crate_root_targets(&self) -> Vec<PackageRoot> {
+        let mut roots = self.package_roots.clone();
+        roots.extend(self.extra_targets.iter().filter(|t| match t.kind.as_str() {
+            "test" => self.add_tests,
+            "example" => self.add_examples,
+            "bench" => self.add_benches,
+            _ => false,
+        }).cloned());
+        roots
     }
 
     /// The workspace members `scan_workspace_root` read from cargo metadata,
@@ -373,7 +414,7 @@ impl KleptoBuilder {
 
         let mut candidates: Vec<(PathBuf, SystemTime)> = Vec::new();
 
-        for root in &self.roots {
+        for root in &self.read_roots() {
             if root.is_file() {
                 push_if_match(root, &include, &exclude, &mut candidates);
                 continue;
@@ -500,16 +541,24 @@ impl KleptoBuilder {
         }
         let macros_known = table.names();
 
-        let modules = crate::resolve::build_module_tree(&self.crate_name, &self.package_roots, &self.roots, &mut files);
-        // a bin's crate root is named after its target; it resolves with its package's dependencies
-        let crate_roots: BTreeMap<String, String> = crate::resolve::root_names(&self.package_roots).into_iter().collect();
+        let targets = self.crate_root_targets();
+        let read_roots = self.read_roots();
+        let modules = crate::resolve::build_module_tree(&self.crate_name, &targets, &read_roots, &mut files);
+        // a bin, test, example or bench crate root is named after its target; it resolves with
+        // its package's dependencies, and a test, example or bench with its package's lib too
+        let names = crate::resolve::root_names(&targets);
+        let crate_roots: BTreeMap<String, String> = names.iter().cloned().collect();
+        let libs: BTreeSet<&str> = self.package_roots.iter().filter(|r| r.kind != "bin").map(|r| r.package.as_str()).collect();
         let mut package_deps = self.package_deps.clone();
-        for (root, package) in &crate_roots {
-            if root != package {
-                if let Some(d) = self.package_deps.get(package) {
-                    package_deps.entry(root.clone()).or_insert_with(|| d.clone());
-                }
+        for (t, (root, _)) in targets.iter().zip(&names) {
+            if *root == t.package {
+                continue;
             }
+            let mut d = self.package_deps.get(&t.package).cloned().unwrap_or_default();
+            if matches!(t.kind.as_str(), "test" | "example" | "bench") && libs.contains(t.package.as_str()) {
+                d.insert(t.package.clone());
+            }
+            package_deps.entry(root.clone()).or_insert(d);
         }
 
         // extract caches

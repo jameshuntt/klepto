@@ -34,3 +34,14 @@ fn a_bin_named_after_its_target_resolves_its_packages_dependencies() {
     let call = k.paths.iter().find(|p| p.path == "lib_a::hello").expect("the call in appd");
     assert_eq!(call.resolution, Some(klepto::Resolution::External("lib_a::hello".into())));
 }
+
+#[test]
+fn an_integration_test_is_a_crate_root_that_uses_its_package() {
+    // include_tests after the scan reads tests/ just the same
+    let k = klepto::Klepto::new("bins").scan_workspace_root(fixture("bins")).expect("metadata").include_tests(true).parse().expect("parse");
+    assert_eq!(k.crate_roots.get("hello").map(String::as_str), Some("lib_a"));
+    assert!(k.items.iter().any(|d| d.id == "hello::hello_is_one"));
+    assert!(k.graph.edges.iter().any(|e| e.from == "hello::hello_is_one" && e.to == "lib_a::hello"), "{:?}", k.graph.edges.iter().filter(|e| e.from.starts_with("hello")).collect::<Vec<_>>());
+    let without = klepto::Klepto::new("bins").scan_workspace_root(fixture("bins")).expect("metadata").parse().expect("parse");
+    assert!(!without.crate_roots.contains_key("hello"));
+}

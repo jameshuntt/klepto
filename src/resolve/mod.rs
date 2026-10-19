@@ -385,18 +385,19 @@ impl<'a> TreeBuilder<'a> {
 /// target's name, or `<package>_bin` when that is the package's and the
 /// package also has a lib. Its items are named under it (`appd::main`).
 pub(crate) fn root_names(roots: &[PackageRoot]) -> Vec<(String, String)> {
-    let has_lib: HashSet<&str> = roots.iter().filter(|r| r.kind != "bin").map(|r| r.package.as_str()).collect();
+    let is_lib = |k: &str| !matches!(k, "bin" | "test" | "example" | "bench");
+    let has_lib: HashSet<&str> = roots.iter().filter(|r| is_lib(&r.kind)).map(|r| r.package.as_str()).collect();
     roots
         .iter()
         .map(|r| {
-            let name = if r.kind == "bin" {
-                if norm(&r.target) == r.package {
+            let name = match r.kind.as_str() {
+                "bin" if norm(&r.target) == r.package => {
                     if has_lib.contains(r.package.as_str()) { format!("{}_bin", r.package) } else { r.package.clone() }
-                } else {
-                    norm(&r.target)
                 }
-            } else {
-                r.package.clone()
+                // a test, example or bench target is a crate of its own beside the package's
+                "test" | "example" | "bench" if norm(&r.target) == r.package => format!("{}_{}", r.package, r.kind),
+                "bin" | "test" | "example" | "bench" => norm(&r.target),
+                _ => r.package.clone(),
             };
             (name, r.package.clone())
         })
