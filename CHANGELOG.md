@@ -13,6 +13,10 @@ Four things a consumer reading a workspace needed (literals with their calls, pa
 - `MacroInvocation::token_paths`: the paths written inside a macro's tokens, by the helper attributes already used (`paths_in_tokens`); the literals in an unexpanded macro's tokens are recorded with `in_macro`.
 - Attributes are not descended into, as before, so doc comments are not literals.
 
+### Attribute arguments
+
+- `AttrOccurrence::args`: the argument tokens as written (`secret`, `"platform"`, `note = "use b"`), beside the paths already recorded (src/model.rs, src/syntax/extract.rs `push_attr`). A consumer reading an attribute's values (an owner's name, a threshold) no longer has nothing but paths.
+
 ### Packages
 
 - `PackageInfo` / `TargetInfo` and `Klepto::packages`: every workspace member's name (both spellings), version, manifest path, directory and targets, from the cargo metadata `scan_workspace_root` already reads (src/model.rs, src/klepto.rs). A consumer no longer runs cargo metadata a second time to find a package's binaries.
@@ -38,7 +42,7 @@ Four things a consumer reading a workspace needed (literals with their calls, pa
 ### Proof
 
 - tests/literals.rs (7 tests, fixtures tests/fixtures/literals, globcycle, doubling): a literal's call and the call's resolution (`std::env::var("APP_KEY")`, `env_or(ENV_SOCKET, "/run/app.sock")`), a const initialiser as the literal's item, a path argument's call, literals and paths in macro tokens, doc comments not recorded, four cyclic globs finishing with the name unresolved, forty doubling lets finishing with the first calls typed.
-- tests/literals.rs also: the arms of two matches on an enum, resolved, with the catch-all marked; a fingerprint equal on the same files and different after an edit; a workspace fingerprint holding its manifests (10 tests in the file).
+- tests/literals.rs also: the arms of two matches on an enum, resolved, with the catch-all marked; a fingerprint equal on the same files and different after an edit; a workspace fingerprint holding its manifests, an attribute's argument tokens (11 tests in the file).
 - tests/packages.rs (2 tests): members' manifests, roots and targets; none for a folder scan.
-- `cargo test`: 160 tests, all pass (148 before).
+- `cargo test`: 161 tests, all pass (148 before).
 - examples/scale.rs: time and memory on a workspace or some of its members.

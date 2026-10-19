@@ -406,6 +406,10 @@ pub struct AttrOccurrence {
     /// For `#[cfg(..)]` attributes: the parsed predicate.
     #[serde(default)]
     pub predicate: Option<CfgPredicate>,
+    /// The argument tokens as written (`secret`, `"platform"`, `max = "2s"`),
+    /// for a consumer that reads an attribute's values rather than its paths.
+    #[serde(default)]
+    pub args: String,
     /// Effective cfg at the attribute (for an attribute produced by
     /// `cfg_attr`, the `cfg_attr` condition is included).
     #[serde(default)]

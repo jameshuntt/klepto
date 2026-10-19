@@ -1191,6 +1191,7 @@ pub fn extract_occurrences(
             self.out.attrs.push(AttrOccurrence {
                 path,
                 arg_paths: paths_in_tokens(args),
+                args: args.to_string(),
                 module_path: self.mod_stack.clone(),
                 location: self.location(span),
                 enclosing_fn: self.current_fn.clone(),

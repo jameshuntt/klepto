@@ -122,3 +122,11 @@ fn a_workspace_fingerprint_reads_the_manifests() {
     assert!(fp.files.iter().any(|(p, _)| p.ends_with("ws/Cargo.toml")));
     assert!(fp.files.iter().any(|(p, _)| p.extension().is_some_and(|e| e == "rs")));
 }
+
+#[test]
+fn an_attribute_keeps_its_argument_tokens() {
+    let k = literals();
+    let d = k.attrs.iter().find(|a| a.path == "deprecated").expect("#[deprecated]");
+    assert_eq!(d.args, "note = \"use serving\"");
+    assert_eq!(d.enclosing_item.as_deref(), Some("app::old_serving"));
+}

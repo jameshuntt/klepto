@@ -35,3 +35,8 @@ pub fn serving(m: &Mode) -> bool {
         _ => false,
     }
 }
+
+#[deprecated(note = "use serving")]
+pub fn old_serving() -> bool {
+    false
+}
