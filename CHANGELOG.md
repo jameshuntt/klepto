@@ -38,6 +38,10 @@ Four things a consumer reading a workspace needed (literals with their calls, pa
 
 - `KleptoBuilder::fingerprint`: the files a scan would read (its `.rs` files, every member's manifest, the root manifest and lockfile) with the blake3 of each and one digest over them, without parsing (src/klepto.rs). The file selection is `parse`'s own, moved into `candidates` so the two cannot disagree. Equal fingerprints mean the same scan; a consumer can reuse what it read before.
 
+### A bin named after its target resolves its dependencies
+
+- A bin whose target name is not its package's (`[[bin]] name = "appd"` in package `app`) is a crate root of its own (`appd::main`), and the resolver looked its dependencies up under `appd`, where there are none: every path into a dependency was unresolved (`UnknownName`). The crate roots' names are now one rule (`resolve::root_names`, used by the module tree and by `parse`), each bin root resolves with its package's dependencies, and `Klepto::crate_roots` maps every root to its package (src/klepto.rs, src/resolve/mod.rs).
+
 ### Glob imports resolved once per module
 
 - A module with two or more glob imports whose roots nothing in scope binds resolved each glob's path through the module's other globs, and those through the first, until `MAX_DEPTH` (32): 2^32 resolutions for two globs. A module with two such globs never finished. [resolve/mod.rs L858-L875 at 0.3.0](https://github.com/jameshuntt/klepto/blob/8eace60/src/resolve/mod.rs#L858-L875).
@@ -52,6 +56,6 @@ Four things a consumer reading a workspace needed (literals with their calls, pa
 
 - tests/literals.rs (7 tests, fixtures tests/fixtures/literals, globcycle, doubling): a literal's call and the call's resolution (`std::env::var("APP_KEY")`, `env_or(ENV_SOCKET, "/run/app.sock")`), a const initialiser as the literal's item, a path argument's call, literals and paths in macro tokens, doc comments not recorded, four cyclic globs finishing with the name unresolved, forty doubling lets finishing with the first calls typed.
 - tests/literals.rs also: the arms of two matches on an enum, resolved, with the catch-all marked; a fingerprint equal on the same files and different after an edit; a workspace fingerprint holding its manifests, an attribute's argument tokens, a path's role in a literal and a pattern, a variant's place and attributes and a macro's tokens (13 tests in the file).
-- tests/packages.rs (3 tests): members' manifests, roots and targets; none for a folder scan; the builder's packages before parsing.
-- `cargo test`: 164 tests, all pass (148 before).
+- tests/packages.rs (4 tests, fixtures tests/fixtures/ws, tests/fixtures/bins): members' manifests, roots and targets; none for a folder scan; the builder's packages before parsing; a bin named after its target resolving its package's dependency.
+- `cargo test`: 165 tests, all pass (148 before).
 - examples/scale.rs: time and memory on a workspace or some of its members.

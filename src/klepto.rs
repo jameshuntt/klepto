@@ -83,6 +83,10 @@ pub struct Klepto {
     /// Every workspace member with its manifest and targets (the member
     /// filter does not apply); empty for `scan_in_folder` / `scan_file`.
     pub packages: BTreeMap<String, PackageInfo>,
+    /// Crate-root name → its package: a bin named after its target (`appd`)
+    /// is a root of its own whose items are `appd::...`, and its package
+    /// (`app`) is what its dependencies and features are declared on.
+    pub crate_roots: BTreeMap<String, String>,
 
     pub no_std_detected: bool,
 
@@ -497,6 +501,16 @@ impl KleptoBuilder {
         let macros_known = table.names();
 
         let modules = crate::resolve::build_module_tree(&self.crate_name, &self.package_roots, &self.roots, &mut files);
+        // a bin's crate root is named after its target; it resolves with its package's dependencies
+        let crate_roots: BTreeMap<String, String> = crate::resolve::root_names(&self.package_roots).into_iter().collect();
+        let mut package_deps = self.package_deps.clone();
+        for (root, package) in &crate_roots {
+            if root != package {
+                if let Some(d) = self.package_deps.get(package) {
+                    package_deps.entry(root.clone()).or_insert_with(|| d.clone());
+                }
+            }
+        }
 
         // extract caches
         let mut functions = Vec::new();
@@ -570,7 +584,8 @@ impl KleptoBuilder {
             impls,
             modules,
             graph: ItemGraph::default(),
-            package_deps: self.package_deps,
+            package_deps,
+            crate_roots,
             features: self.features,
             packages: self.packages,
             no_std_detected,

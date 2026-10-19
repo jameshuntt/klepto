@@ -1,0 +1,11 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+lib_a = { path = "../lib_a" }
+
+[[bin]]
+name = "appd"
+path = "src/main.rs"

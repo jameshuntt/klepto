@@ -381,17 +381,14 @@ impl<'a> TreeBuilder<'a> {
     }
 }
 
-/// `(package name, index of the root file)` per crate root.
-fn root_entries(
-    crate_name: &str,
-    roots: &[PackageRoot],
-    scan_roots: &[PathBuf],
-    index: &HashMap<PathBuf, usize>,
-) -> Vec<(String, usize)> {
-    let mut out = Vec::new();
-    if !roots.is_empty() {
-        let has_lib: HashSet<&str> = roots.iter().filter(|r| r.kind != "bin").map(|r| r.package.as_str()).collect();
-        for r in roots {
+/// The crate-root name of each target: a lib is its package; a bin is its
+/// target's name, or `<package>_bin` when that is the package's and the
+/// package also has a lib. Its items are named under it (`appd::main`).
+pub(crate) fn root_names(roots: &[PackageRoot]) -> Vec<(String, String)> {
+    let has_lib: HashSet<&str> = roots.iter().filter(|r| r.kind != "bin").map(|r| r.package.as_str()).collect();
+    roots
+        .iter()
+        .map(|r| {
             let name = if r.kind == "bin" {
                 if norm(&r.target) == r.package {
                     if has_lib.contains(r.package.as_str()) { format!("{}_bin", r.package) } else { r.package.clone() }
@@ -401,6 +398,21 @@ fn root_entries(
             } else {
                 r.package.clone()
             };
+            (name, r.package.clone())
+        })
+        .collect()
+}
+
+/// `(package name, index of the root file)` per crate root.
+fn root_entries(
+    crate_name: &str,
+    roots: &[PackageRoot],
+    scan_roots: &[PathBuf],
+    index: &HashMap<PathBuf, usize>,
+) -> Vec<(String, usize)> {
+    let mut out = Vec::new();
+    if !roots.is_empty() {
+        for (r, (name, _)) in roots.iter().zip(root_names(roots)) {
             if let Some(&i) = index.get(&canon(&r.file)) {
                 out.push((name, i));
             }

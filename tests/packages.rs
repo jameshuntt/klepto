@@ -26,3 +26,11 @@ fn the_builder_has_the_packages_before_parsing() {
     assert!(b.packages().contains_key("app"));
     assert!(b.packages().contains_key("mydep"));
 }
+
+#[test]
+fn a_bin_named_after_its_target_resolves_its_packages_dependencies() {
+    let k = klepto::Klepto::new("bins").scan_workspace_root(fixture("bins")).expect("metadata").parse().expect("parse");
+    assert_eq!(k.crate_roots.get("appd").map(String::as_str), Some("app"));
+    let call = k.paths.iter().find(|p| p.path == "lib_a::hello").expect("the call in appd");
+    assert_eq!(call.resolution, Some(klepto::Resolution::External("lib_a::hello".into())));
+}
