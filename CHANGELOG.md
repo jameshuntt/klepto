@@ -1,5 +1,38 @@
 # Changelog
 
+## 0.3.2 (2026-10-19)
+
+A feature's items across crates. A `[features]` entry can name a feature of a dependency (`a/x`, `b?/y`), and that feature gates items of its own, and its own entries name features of its dependencies. Before, klepto parsed those entries but answered for one crate only: `affected_by_feature(p, f)` gave p's items and nothing of what `a/x` brings into a. Now the map goes down through the dependencies, crate by crate, with the items each feature gates and the entry that brought it.
+
+### What was missing
+
+- `affected_by_feature` gives the package's own gated items, its uses of dependencies the feature turns off, and the dependents: [graph.rs L509-L552 at 0.3.1](https://github.com/jameshuntt/klepto/blob/f5ab8c1/src/graph.rs#L509-L552). A `DepFeature` entry was read only to decide whether the dependency itself is on ([features.rs L131-L149 at 0.3.1](https://github.com/jameshuntt/klepto/blob/f5ab8c1/src/resolve/features.rs#L131-L149)); the dependency's own feature graph was never entered.
+- The test that showed it, on the new fixture: `affected_by_feature("p", "f")` with `f = ["dep:a", "a/x", "b?/y"]` and `a`'s `x = ["c/z"]` gave `gated: ["p::p_f", "p::p_g"]`, no `a::x_fn`, no `c::z_fn`.
+
+### feature_items and features_bringing
+
+- `Klepto::feature_items(package, feature) -> FeatureItemMap`, beside `affected_by_feature`: [graph.rs L617-L701](https://github.com/jameshuntt/klepto/blob/7ce1869fb7dc4de2f512e11ff8487a38cea70fda/src/graph.rs#L617-L701). The closure of the feature: its own features, `name/feat` into the dependency's features and on down, `dep:name` (and `name/feat` on an optional `name`) turning the dependency on with its default features (unless `default-features = false`) and its declared `features = [..]`, and `name?/feat` only once `name` is on, non-optional or turned on by the closure. A `name?/feat` whose dependency nothing turns on is listed in `weak_pending`, not dropped.
+- Each node is a `FeatureKey` (a crate and a feature, or the crate itself when an optional dependency is turned on) with its items: a feature's are the crate's items whose own cfg cannot hold without it, the same rule `affected_by_feature` uses; a crate's own are its items no feature of it gates. `enabled_by` is the `FeatureEdge` that brought it (`p:f → a/x`, `p:f → dep:a (default features)`), with `weak` set for `name?/feat`. A crate that was not scanned is in the map with `scanned: false` and no items, and its features are not followed. `FeatureItemMap::get`, `by_crate` and `items_of` read it: [graph.rs L218-L303](https://github.com/jameshuntt/klepto/blob/7ce1869fb7dc4de2f512e11ff8487a38cea70fda/src/graph.rs#L218-L303).
+- `Klepto::features_bringing(package, item) -> Vec<FeatureChain>`: the reverse. Every (package, feature) whose closure brings the item, each with its shortest chain of entries and the gate it ends on in the item's crate; `FeatureChain::weak` says when the chain needs a dependency on otherwise.
+- The feature graph itself is in features.rs: `FeatureKey`, `EnableBy`, `FeatureEdge`, the steps out of one feature and the closure ([features.rs L346-L529](https://github.com/jameshuntt/klepto/blob/7ce1869fb7dc4de2f512e11ff8487a38cea70fda/src/resolve/features.rs#L346-L529)). `FeatureEnable` prints Cargo's spelling (`Display`), so a consumer no longer writes its own.
+- One rule, one place. The two entry rules `active_features` and `deps_enabled_by` wrote inline (which own feature an entry turns on, including the implicit feature `a/x` turns on; which optional dependency an entry turns on) are now `own_feature_of` and `dep_turned_on`, used by both and by the closure: [features.rs L101-L132](https://github.com/jameshuntt/klepto/blob/7ce1869fb7dc4de2f512e11ff8487a38cea70fda/src/resolve/features.rs#L101-L132), was [features.rs L110-L126 and L136-L146 at 0.3.1](https://github.com/jameshuntt/klepto/blob/f5ab8c1/src/resolve/features.rs#L110-L146). `FeatureModel::dep_package` maps a dependency name to its package (renames honoured). `affected_by_feature`'s gated filter is now `gated_items` ([graph.rs L734-L744](https://github.com/jameshuntt/klepto/blob/7ce1869fb7dc4de2f512e11ff8487a38cea70fda/src/graph.rs#L734-L744), was [L516-L527 at 0.3.1](https://github.com/jameshuntt/klepto/blob/f5ab8c1/src/graph.rs#L516-L527)); its answer is unchanged.
+
+### Scale
+
+- Items are computed once per (crate, feature) on one index of the graph's nodes by crate, and each distinct cfg is judged once per feature (`KeyItems`, [graph.rs L746-L792](https://github.com/jameshuntt/klepto/blob/7ce1869fb7dc4de2f512e11ff8487a38cea70fda/src/graph.rs#L746-L792)), as `affected_by_feature` already did per cfg.
+- On the kit's workspace (430 packages with a model, 70,745 nodes, parsed in 29 to 35 s): `feature_items` for all 166 (package, feature) pairs in 0.8 to 0.9 s, the slowest 9.6 ms. The widest, `frost_bridge:daemon`, reaches 18 crates and 23 (crate, feature) nodes with 1,401 items in 4.6 ms. 67 `name/feat` edges land on a member's feature; `node_daemon_runtime:pkcs11-custody-qualification` brings the 69 items of `pathgen_io_private:durable-commit` through `pathgen:durable-commit → pathgen_io/durable-commit`, a renamed dependency. `nodeplan_sdk` declares no features. `features_bringing` on one item: 4.7 ms.
+
+### Proof
+
+- tests/feature_items.rs on the new fixture tests/fixtures/featitems (`p:f = ["dep:a", "a/x", "b?/y"]`, `a:x = ["c/z"]`, `a:default = ["d"]`, `p:g = ["f", "dep:b"]`, `p:h = ["b/y"]`, `p:i = ["e/w"]` on an implicit feature):
+  - `dependency_items_come_in_with_the_feature` (failed before: `a::x_fn` not in `affected_by_feature(p, f)`): p:f brings `a` itself, `a:default`, `a:d`, `a:x` with `a::x_fn`, `a::x_mod`, `a::x_mod::XThing`, and `c:z` with `c::z_fn` through `a:x → c/z`; `p:f → b?/y` waits.
+  - `weak_entry_brings_its_feature_once_the_dependency_is_on`: p:g turns b on, so `b:y` comes in by `p:f → b?/y`, weak; p:h's `b/y` turns b on itself.
+  - `implicit_feature_of_the_dependency_comes_in`, `feature_items_of_an_unknown_package_is_empty`.
+  - `features_bringing_an_item_of_a_dependency`: `c::z_fn` is brought by `c:z`, `a:x`, `p:f` and `p:g`, each with its chain.
+  - `features_bringing_agrees_with_feature_items`: for every item of the fixture, every chain without a weak entry is a closure that holds the item.
+  - `affected_by_feature_stays_in_its_crate`; the existing `affected_by_feature` goldens in tests/graph.rs pass unchanged.
+- Nothing public removed or changed: the rustdoc JSON of 0.3.1 and 0.3.2 differ only by added items.
+
 ## 0.3.1 (2026-10-19)
 
 Four things a consumer reading a workspace needed (literals with their calls, packages, matches, a fingerprint), and two that kept klepto from finishing on a large workspace. Built against the kit's workspace (1,936 files, about a million lines): before, it did not finish (one run passed 100 GB of memory on five members); now the whole workspace parses in 28 s at 5.4 GB, dependency macros expanded and std expression macros read.
