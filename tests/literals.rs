@@ -153,3 +153,14 @@ fn a_variant_keeps_its_attributes_and_place_and_a_macro_its_tokens() {
     let printed = k.macros_inv.iter().find(|m| m.name == "println").expect("println!");
     assert_eq!(printed.tokens, "\"{} {}\" , a , \"APP_PRINTED\"");
 }
+
+#[test]
+fn the_arguments_of_std_expression_macros_are_code() {
+    let k = literals();
+    let key = lit(&k, "APP_IN_ASSERT");
+    assert_eq!(key.arg_of.as_ref().and_then(|a| a.resolution.clone()), Some(Resolution::Local("app::env_or".into())));
+    assert_eq!(key.in_macro.as_deref(), Some("assert"));
+    // label(..) in the message is a call with an edge
+    assert!(k.graph.edges.iter().any(|e| e.from == "app::checked" && e.to == "app::label"));
+    assert!(k.graph.edges.iter().any(|e| e.from == "app::checked" && e.to == "app::env_or"));
+}

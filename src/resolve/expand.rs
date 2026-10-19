@@ -661,6 +661,21 @@ pub struct Expansion {
     pub outcome: Outcome,
 }
 
+/// std macros whose arguments are expressions, comma separated: read as a
+/// tuple of their arguments, so what is written in `println!("{}", f(x))` is
+/// code like any other (paths, calls, literals, method receivers). `env!` and
+/// `option_env!` stay tokens: their literal is the key they read.
+pub(crate) const EXPRESSION_MACROS: &[&str] = &[
+    "println", "print", "eprintln", "eprint", "format", "format_args", "write", "writeln", "panic", "assert", "assert_eq",
+    "assert_ne", "debug_assert", "debug_assert_eq", "debug_assert_ne", "todo", "unimplemented", "unreachable", "vec", "dbg",
+];
+
+/// Whether a macro path names one of [`EXPRESSION_MACROS`].
+pub fn is_expression_macro(path: &str) -> bool {
+    let last = path.rsplit("::").next().unwrap_or(path);
+    EXPRESSION_MACROS.contains(&last)
+}
+
 /// std / core macros that expand to nothing structural: left alone.
 const BUILTIN_MACROS: &[&str] = &[
     "println", "print", "eprintln", "eprint", "format", "format_args", "write", "writeln", "panic", "assert", "assert_eq",
@@ -722,6 +737,11 @@ impl<'t> Expander<'t> {
             return Some((mac.tokens.clone(), Vec::new()));
         }
         let Some(def) = self.table.find(&mac.path, &self.package, &self.deps, &self.file, &self.mod_chain) else {
+            if EXPRESSION_MACROS.contains(&name.as_str()) && !mac.tokens.is_empty() {
+                // read as the tuple of its arguments; recorded as a builtin by the caller
+                let tokens = &mac.tokens;
+                return Some((quote::quote!((#tokens ,)), Vec::new()));
+            }
             if BUILTIN_MACROS.contains(&name.as_str()) {
                 self.record(mac, Outcome::Builtin);
             } else {
@@ -844,6 +864,20 @@ impl<'t> Expander<'t> {
     fn expand_stmts(&mut self, mac: &syn::Macro, inv_attrs: &[syn::Attribute]) -> Option<Vec<syn::Stmt>> {
         let (ts, mut cfgs) = self.expand_tokens(mac)?;
         cfgs.splice(0..0, inv_attrs.iter().filter(|a| !is_marker(a)).cloned());
+        if self.reads_arguments(mac) {
+            return match syn::parse2::<syn::Expr>(ts) {
+                Ok(e) => {
+                    let mut stmts = vec![syn::Stmt::Expr(e, Some(Default::default()))];
+                    mark_stmts(&mut stmts, mac, &cfgs);
+                    self.record(mac, Outcome::Builtin);
+                    Some(stmts)
+                }
+                Err(_) => {
+                    self.record(mac, Outcome::Builtin);
+                    None
+                }
+            };
+        }
         match syn::Block::parse_within.parse2(ts.clone()) {
             Ok(mut stmts) => {
                 let produced = stmts.len();
@@ -873,6 +907,13 @@ impl<'t> Expander<'t> {
     fn expand_expr(&mut self, mac: &syn::Macro, inv_attrs: &[syn::Attribute]) -> Option<syn::Expr> {
         let (ts, mut cfgs) = self.expand_tokens(mac)?;
         cfgs.splice(0..0, inv_attrs.iter().filter(|a| !is_marker(a)).cloned());
+        if self.reads_arguments(mac) {
+            self.record(mac, Outcome::Builtin);
+            return syn::parse2::<syn::Expr>(ts).ok().map(|mut e| {
+                mark_expr(&mut e, mac, &cfgs);
+                e
+            });
+        }
         match syn::parse2::<syn::Expr>(ts.clone()) {
             Ok(mut e) => {
                 mark_expr(&mut e, mac, &cfgs);
@@ -895,6 +936,12 @@ impl<'t> Expander<'t> {
                 }
             },
         }
+    }
+
+    /// A std expression macro no definition on disk overrides: its arguments are read.
+    fn reads_arguments(&self, mac: &syn::Macro) -> bool {
+        let name = mac.path.segments.last().map(|s| s.ident.to_string()).unwrap_or_default();
+        EXPRESSION_MACROS.contains(&name.as_str()) && !mac.tokens.is_empty() && self.table.find(&mac.path, &self.package, &self.deps, &self.file, &self.mod_chain).is_none()
     }
 
     fn expand_item_list(&mut self, items: &mut Vec<syn::Item>) {
@@ -952,8 +999,11 @@ fn invoked_marker(mac: &syn::Macro) -> Option<syn::Attribute> {
     if mac.path.is_ident("klepto_cfg_if_branch") {
         return None;
     }
-    Some(doc_attr_at(&format!("{INVOKED_MARK}{}!", macro_name(mac)), site_of(mac)))
+    Some(doc_attr_at(&format!("{INVOKED_MARK}{}!{TOKENS_SEP}{}", macro_name(mac), mac.tokens), site_of(mac)))
 }
+
+/// Separates the invoked marker's macro path from the invocation's tokens.
+const TOKENS_SEP: char = '\u{1f}';
 
 fn prepend_attrs(item: &mut syn::Item, invocation_attrs: &[syn::Attribute], mark: &syn::Attribute) {
     let attrs: Vec<syn::Attribute> = invocation_attrs
@@ -1145,7 +1195,15 @@ fn marker_text(a: &syn::Attribute) -> Option<(String, Span)> {
 pub fn invoked_by(attrs: &[syn::Attribute]) -> Option<(String, Span)> {
     attrs.iter().find_map(|a| {
         let (v, span) = marker_text(a)?;
-        v.strip_prefix(INVOKED_MARK).map(|m| (m.trim_end_matches('!').to_string(), span))
+        v.strip_prefix(INVOKED_MARK).map(|m| (m.split(TOKENS_SEP).next().unwrap_or(m).trim_end_matches('!').to_string(), span))
+    })
+}
+
+/// The tokens of the invocation a node was the first product of, as written.
+pub fn invoked_tokens(attrs: &[syn::Attribute]) -> Option<String> {
+    attrs.iter().find_map(|a| {
+        let (v, _) = marker_text(a)?;
+        v.strip_prefix(INVOKED_MARK).and_then(|m| m.split_once(TOKENS_SEP)).map(|(_, t)| t.to_string())
     })
 }
 

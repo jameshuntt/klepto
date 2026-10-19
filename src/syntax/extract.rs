@@ -851,6 +851,8 @@ pub fn extract_occurrences(
         match_stack: Vec<usize>,
         // (match, arm) whose pattern is being visited
         arm_pattern: Option<(usize, usize)>,
+        // the expression macros whose arguments are being visited, innermost last
+        parsed_macros: Vec<String>,
         // > 0 while inside a pattern
         pattern_depth: usize,
         // the next path visited is a struct literal's own path
@@ -1139,6 +1141,8 @@ pub fn extract_occurrences(
         /// first produced node carries its path and span.
         fn record_invoked(&mut self, attrs: &[Attribute]) {
             if let Some((path, span)) = crate::resolve::expand::invoked_by(attrs) {
+                let tokens = crate::resolve::expand::invoked_tokens(attrs).unwrap_or_default();
+                let token_paths = tokens.parse::<TokenStream>().map(|ts| paths_in_tokens(&ts)).unwrap_or_default();
                 let segs: Vec<String> = path.split("::").map(str::to_string).collect();
                 let cfg = self.cfg();
                 self.out.macros_inv.push(MacroInvocation {
@@ -1152,13 +1156,14 @@ pub fn extract_occurrences(
                     enclosing_item: self.item(),
                     resolution: None,
                     cfg,
-                    tokens: String::new(),
-                    token_paths: Vec::new(),
+                    tokens,
+                    token_paths,
                 });
             }
         }
 
         fn push_literal(&mut self, value: String, span: Span, in_macro: Option<String>) {
+            let in_macro = in_macro.or_else(|| self.parsed_macros.last().cloned());
             self.out.literals.push(LiteralOccurrence {
                 value,
                 module_path: self.mod_stack.clone(),
@@ -1343,9 +1348,17 @@ pub fn extract_occurrences(
 
         fn visit_expr(&mut self, e: &'ast syn::Expr) {
             self.record_invoked(expr_attrs(e));
+            // the arguments of a std expression macro, read as code: their literals know the macro
+            let read = crate::resolve::expand::invoked_by(expr_attrs(e)).filter(|(p, _)| crate::resolve::expand::is_expression_macro(p));
+            if let Some((p, _)) = &read {
+                self.parsed_macros.push(p.clone());
+            }
             let pushed = self.push_cfg(expr_attrs(e));
             syn::visit::visit_expr(self, e);
             self.pop_cfg(pushed);
+            if read.is_some() {
+                self.parsed_macros.pop();
+            }
         }
 
         fn visit_expr_match(&mut self, m: &'ast syn::ExprMatch) {

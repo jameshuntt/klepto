@@ -2,7 +2,7 @@
 
 ## 0.3.1 (pending, not published)
 
-Four things a consumer reading a workspace needed (literals with their calls, packages, matches, a fingerprint), and two that kept klepto from finishing on a large workspace. Built against the kit's workspace (1,936 files, about a million lines): before, it did not finish (one run passed 100 GB of memory on five members); now the whole workspace parses in 22 s at 4.8 GB, dependency macros expanded.
+Four things a consumer reading a workspace needed (literals with their calls, packages, matches, a fingerprint), and two that kept klepto from finishing on a large workspace. Built against the kit's workspace (1,936 files, about a million lines): before, it did not finish (one run passed 100 GB of memory on five members); now the whole workspace parses in 28 s at 5.4 GB, dependency macros expanded and std expression macros read.
 
 ### String literals and the call they are an argument of
 
@@ -38,6 +38,11 @@ Four things a consumer reading a workspace needed (literals with their calls, pa
 
 - `KleptoBuilder::fingerprint`: the files a scan would read (its `.rs` files, every member's manifest, the root manifest and lockfile) with the blake3 of each and one digest over them, without parsing (src/klepto.rs). The file selection is `parse`'s own, moved into `candidates` so the two cannot disagree. Equal fingerprints mean the same scan; a consumer can reuse what it read before.
 
+### std expression macros read as code
+
+- `println!`, `format!`, `write!`, `assert!`, `assert_eq!`, `panic!`, `vec!`, `dbg!` and the rest of `EXPRESSION_MACROS` (src/resolve/expand.rs) are read as the tuple of their arguments during expansion, so what is written inside them (a call, a path, a method on a typed receiver, a literal) is an occurrence with its resolution and its edge, in every later phase alike (extraction, method typing, the graph, patterns). Before, their tokens were opaque: a call made only inside `assert!` or `println!` had no edge, and on the kit's workspace 62,000 edges were missing (629,213 → 691,489). The invocation is still recorded (`Outcome::Builtin`, and its `MacroInvocation` with its tokens); a literal inside knows the macro (`in_macro`); `env!` and `option_env!` stay tokens, their literal being the key they read. An invocation whose arguments do not parse as expressions (`vec![x; n]`) is left as it was.
+- The `invoked` marker carries the invocation's tokens, so an expanded invocation's `MacroInvocation::tokens` and `token_paths` are what was written (`expand::invoked_tokens`).
+
 ### A bin named after its target resolves its dependencies
 
 - A bin whose target name is not its package's (`[[bin]] name = "appd"` in package `app`) is a crate root of its own (`appd::main`), and the resolver looked its dependencies up under `appd`, where there are none: every path into a dependency was unresolved (`UnknownName`). The crate roots' names are now one rule (`resolve::root_names`, used by the module tree and by `parse`), each bin root resolves with its package's dependencies, and `Klepto::crate_roots` maps every root to its package (src/klepto.rs, src/resolve/mod.rs).
@@ -55,7 +60,7 @@ Four things a consumer reading a workspace needed (literals with their calls, pa
 ### Proof
 
 - tests/literals.rs (7 tests, fixtures tests/fixtures/literals, globcycle, doubling): a literal's call and the call's resolution (`std::env::var("APP_KEY")`, `env_or(ENV_SOCKET, "/run/app.sock")`), a const initialiser as the literal's item, a path argument's call, literals and paths in macro tokens, doc comments not recorded, four cyclic globs finishing with the name unresolved, forty doubling lets finishing with the first calls typed.
-- tests/literals.rs also: the arms of two matches on an enum, resolved, with the catch-all marked; a fingerprint equal on the same files and different after an edit; a workspace fingerprint holding its manifests, an attribute's argument tokens, a path's role in a literal and a pattern, a variant's place and attributes and a macro's tokens (13 tests in the file).
+- tests/literals.rs also: the arms of two matches on an enum, resolved, with the catch-all marked; a fingerprint equal on the same files and different after an edit; a workspace fingerprint holding its manifests, an attribute's argument tokens, a path's role in a literal and a pattern, a variant's place and attributes and a macro's tokens, the arguments of `assert!` as code (14 tests in the file).
 - tests/packages.rs (4 tests, fixtures tests/fixtures/ws, tests/fixtures/bins): members' manifests, roots and targets; none for a folder scan; the builder's packages before parsing; a bin named after its target resolving its package's dependency.
-- `cargo test`: 165 tests, all pass (148 before).
+- `cargo test`: 166 tests, all pass (148 before).
 - examples/scale.rs: time and memory on a workspace or some of its members.

@@ -55,3 +55,7 @@ pub fn configs(c: &Config) -> Option<Config> {
     let Config { name } = c;
     Some(Config { name: name.clone() })
 }
+
+pub fn checked() {
+    assert!(env_or("APP_IN_ASSERT", "d").len() < 99, "{}", label(&Mode::Serving));
+}
