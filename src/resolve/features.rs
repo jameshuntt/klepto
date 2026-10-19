@@ -9,7 +9,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
 /// One entry of a `[features]` list.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum FeatureEnable {
     /// `"other_feature"`
     Feature(String),
@@ -98,6 +98,38 @@ impl FeatureModel {
         self.dep(name).is_some_and(|d| d.optional)
     }
 
+    /// The feature of this package an entry turns on: `g` for `"g"`, and
+    /// for `"name/feat"` on an optional `name` with an implicit feature,
+    /// that implicit feature `name`.
+    fn own_feature_of<'e>(&self, e: &'e FeatureEnable) -> Option<&'e str> {
+        match e {
+            FeatureEnable::Feature(g) => Some(g),
+            FeatureEnable::Dep(_) => None,
+            FeatureEnable::DepFeature { dep, weak: false, .. }
+                if self.is_optional_dep(dep) && self.features.get(dep).is_some_and(|i| i.implicit) =>
+            {
+                Some(dep)
+            }
+            FeatureEnable::DepFeature { .. } => None,
+        }
+    }
+
+    /// The optional dependency an entry turns on: `"dep:name"` and
+    /// `"name/feat"` (not `"name?/feat"`) on an optional `name`.
+    fn dep_turned_on<'e>(&self, e: &'e FeatureEnable) -> Option<&'e str> {
+        match e {
+            FeatureEnable::Dep(d) if self.is_optional_dep(d) => Some(d),
+            FeatureEnable::DepFeature { dep, weak: false, .. } if self.is_optional_dep(dep) => Some(dep),
+            _ => None,
+        }
+    }
+
+    /// The package a dependency name (as used in source) stands for, in
+    /// klepto's spelling (`-` → `_`); the name itself when it is not declared.
+    pub fn dep_package(&self, dep: &str) -> String {
+        self.dep(dep).map(|d| norm(&d.package)).unwrap_or_else(|| dep.to_string())
+    }
+
     /// Transitive closure of `requested` (plus `default` when asked).
     pub fn active_features(&self, requested: &[&str], default_features: bool) -> BTreeSet<String> {
         let mut active: BTreeSet<String> = requested.iter().map(|s| s.to_string()).collect();
@@ -108,19 +140,9 @@ impl FeatureModel {
         while let Some(f) = work.pop() {
             let Some(info) = self.features.get(&f) else { continue };
             for e in &info.enables {
-                let next = match e {
-                    FeatureEnable::Feature(g) => Some(g.clone()),
-                    FeatureEnable::Dep(_) => None,
-                    FeatureEnable::DepFeature { dep, weak: false, .. }
-                        if self.is_optional_dep(dep) && self.features.get(dep).is_some_and(|i| i.implicit) =>
-                    {
-                        Some(dep.clone())
-                    }
-                    FeatureEnable::DepFeature { .. } => None,
-                };
-                if let Some(g) = next {
-                    if active.insert(g.clone()) {
-                        work.push(g);
+                if let Some(g) = self.own_feature_of(e) {
+                    if active.insert(g.to_string()) {
+                        work.push(g.to_string());
                     }
                 }
             }
@@ -134,14 +156,8 @@ impl FeatureModel {
         for f in self.active_features(&[feature], false) {
             let Some(info) = self.features.get(&f) else { continue };
             for e in &info.enables {
-                match e {
-                    FeatureEnable::Dep(d) if self.is_optional_dep(d) => {
-                        deps.insert(d.clone());
-                    }
-                    FeatureEnable::DepFeature { dep, weak: false, .. } if self.is_optional_dep(dep) => {
-                        deps.insert(dep.clone());
-                    }
-                    _ => {}
+                if let Some(d) = self.dep_turned_on(e) {
+                    deps.insert(d.to_string());
                 }
             }
         }
@@ -325,6 +341,192 @@ pub(crate) fn render_enable(e: &FeatureEnable) -> String {
         FeatureEnable::DepFeature { dep, feature, weak: true } => format!("{dep}?/{feature}"),
         FeatureEnable::DepFeature { dep, feature, weak: false } => format!("{dep}/{feature}"),
     }
+}
+
+impl std::fmt::Display for FeatureEnable {
+    /// Cargo's spelling: `g`, `dep:a`, `a/x`, `a?/x`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&render_enable(self))
+    }
+}
+
+/// One node of a feature's closure across crates: a feature of a crate,
+/// or (`feature: None`) the crate itself, an optional dependency turned on.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FeatureKey {
+    /// The crate, in klepto's spelling (`-` → `_`).
+    pub package: String,
+    pub feature: Option<String>,
+}
+
+impl FeatureKey {
+    pub fn new(package: &str, feature: Option<&str>) -> Self {
+        FeatureKey { package: package.to_string(), feature: feature.map(str::to_string) }
+    }
+}
+
+impl std::fmt::Display for FeatureKey {
+    /// `p:f` for a feature, `a` for the crate itself.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match &self.feature {
+            Some(feat) => write!(f, "{}:{feat}", self.package),
+            None => f.write_str(&self.package),
+        }
+    }
+}
+
+/// What an entry of a feature list brings.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub enum EnableBy {
+    /// What the entry names: a feature (`g`, `a/x`, `a?/x`), the
+    /// dependency itself (`dep:a`, or `a/x` on an optional `a`), or the
+    /// implicit feature `a` that `a/x` turns on.
+    Entry,
+    /// The `default` feature of the optional dependency the entry turned
+    /// on (its declaration does not say `default-features = false`).
+    DefaultFeatures,
+    /// A name in `features = [..]` on the declaration of the optional
+    /// dependency the entry turned on.
+    Declared,
+}
+
+/// The edge that brought one node of a feature's closure: an entry of
+/// `package:feature`'s list.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct FeatureEdge {
+    /// The crate whose `[features]` holds the entry.
+    pub package: String,
+    pub feature: String,
+    /// The entry, as declared.
+    pub entry: FeatureEnable,
+    pub by: EnableBy,
+    /// `name?/feat`: it brings `feat` only when `name` is on otherwise.
+    pub weak: bool,
+}
+
+impl FeatureEdge {
+    /// The node the edge starts from.
+    pub fn from(&self) -> FeatureKey {
+        FeatureKey::new(&self.package, Some(&self.feature))
+    }
+}
+
+impl std::fmt::Display for FeatureEdge {
+    /// `p:f → a/x`, `p:f → dep:a (default features)`, `p:f → dep:a (features = [x])`.
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{} → {}", self.package, self.feature, self.entry)?;
+        match self.by {
+            EnableBy::Entry => Ok(()),
+            EnableBy::DefaultFeatures => f.write_str(" (default features)"),
+            EnableBy::Declared => f.write_str(" (declared features)"),
+        }
+    }
+}
+
+/// One step out of `package:feature`: the node it reaches, the edge, the
+/// dependency name (in `package`) it turns on, and, for a weak entry on an
+/// optional dependency, the dependency name that must be on otherwise.
+#[derive(Debug, Clone)]
+pub(crate) struct FeatureStep {
+    pub(crate) to: FeatureKey,
+    pub(crate) edge: FeatureEdge,
+    pub(crate) turns_on: Option<String>,
+    pub(crate) needs_on: Option<String>,
+}
+
+/// Every step out of `package:feature`, from its `[features]` entry; none
+/// when the package has no model or does not declare the feature. The
+/// rules are the model's own (`own_feature_of`, `dep_turned_on`).
+pub(crate) fn feature_steps(models: &BTreeMap<String, FeatureModel>, package: &str, feature: &str) -> Vec<FeatureStep> {
+    let Some(model) = models.get(package) else { return Vec::new() };
+    let Some(info) = model.features.get(feature) else { return Vec::new() };
+    let mut out = Vec::new();
+    for e in &info.enables {
+        let edge = |by: EnableBy| FeatureEdge {
+            package: package.to_string(),
+            feature: feature.to_string(),
+            entry: e.clone(),
+            by,
+            weak: matches!(e, FeatureEnable::DepFeature { weak: true, .. }),
+        };
+        if let Some(g) = model.own_feature_of(e) {
+            out.push(FeatureStep { to: FeatureKey::new(package, Some(g)), edge: edge(EnableBy::Entry), turns_on: None, needs_on: None });
+        }
+        if let Some(d) = model.dep_turned_on(e) {
+            let dep_pkg = model.dep_package(d);
+            out.push(FeatureStep { to: FeatureKey::new(&dep_pkg, None), edge: edge(EnableBy::Entry), turns_on: Some(d.to_string()), needs_on: None });
+            let dep_model = models.get(&dep_pkg);
+            for decl in model.dependencies.iter().filter(|x| x.name == d && x.optional) {
+                if decl.default_features && dep_model.is_some_and(|m| m.features.contains_key("default")) {
+                    out.push(FeatureStep { to: FeatureKey::new(&dep_pkg, Some("default")), edge: edge(EnableBy::DefaultFeatures), turns_on: None, needs_on: None });
+                }
+                for f in &decl.features {
+                    out.push(FeatureStep { to: FeatureKey::new(&dep_pkg, Some(f)), edge: edge(EnableBy::Declared), turns_on: None, needs_on: None });
+                }
+            }
+        }
+        if let FeatureEnable::DepFeature { dep, feature: f, weak } = e {
+            let needs_on = (*weak && model.is_optional_dep(dep)).then(|| dep.clone());
+            out.push(FeatureStep { to: FeatureKey::new(&model.dep_package(dep), Some(f)), edge: edge(EnableBy::Entry), turns_on: None, needs_on });
+        }
+    }
+    out
+}
+
+/// The closure of `package:feature` across crates, breadth first so each
+/// node carries the shortest chain's last edge (`None` for the start): its
+/// own features, `name/feat` into the dependency's features, `dep:name`
+/// (and `name/feat` on an optional `name`) turning the dependency on with
+/// its default and declared features, and `name?/feat` only once `name`
+/// is on (non-optional, or turned on by the closure). The weak steps whose
+/// dependency nothing in the closure turned on are returned beside it.
+pub(crate) fn feature_closure(
+    models: &BTreeMap<String, FeatureModel>,
+    package: &str,
+    feature: &str,
+) -> (Vec<(FeatureKey, Option<FeatureEdge>)>, Vec<FeatureEdge>) {
+    let start = FeatureKey::new(package, Some(feature));
+    let mut reached: Vec<(FeatureKey, Option<FeatureEdge>)> = vec![(start.clone(), None)];
+    let mut seen: BTreeSet<FeatureKey> = BTreeSet::from([start.clone()]);
+    let mut on: BTreeSet<(String, String)> = BTreeSet::new();
+    let mut waiting: Vec<FeatureStep> = Vec::new();
+    let mut queue: std::collections::VecDeque<FeatureKey> = std::collections::VecDeque::from([start]);
+    loop {
+        while let Some(key) = queue.pop_front() {
+            let Some(f) = &key.feature else { continue };
+            for step in feature_steps(models, &key.package, f) {
+                if step.needs_on.as_ref().is_some_and(|d| !on.contains(&(key.package.clone(), d.clone()))) {
+                    waiting.push(step);
+                    continue;
+                }
+                if let Some(d) = &step.turns_on {
+                    on.insert((key.package.clone(), d.clone()));
+                }
+                if seen.insert(step.to.clone()) {
+                    queue.push_back(step.to.clone());
+                    reached.push((step.to, Some(step.edge)));
+                }
+            }
+        }
+        // a weak step whose dependency the closure has since turned on
+        let (ready, still): (Vec<FeatureStep>, Vec<FeatureStep>) = waiting
+            .into_iter()
+            .partition(|s| s.needs_on.as_ref().is_some_and(|d| on.contains(&(s.edge.package.clone(), d.clone()))));
+        waiting = still;
+        if ready.is_empty() {
+            break;
+        }
+        for step in ready {
+            if seen.insert(step.to.clone()) {
+                queue.push_back(step.to.clone());
+                reached.push((step.to, Some(step.edge)));
+            }
+        }
+    }
+    let mut pending: Vec<FeatureEdge> = waiting.into_iter().map(|s| s.edge).collect();
+    pending.sort();
+    pending.dedup();
+    (reached, pending)
 }
 
 /// Implicit features exist only for optional dependencies no

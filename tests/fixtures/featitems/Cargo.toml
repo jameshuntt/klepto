@@ -1,0 +1,6 @@
+# feature_items / features_bringing: a feature's closure across crates.
+# p:f turns a on (dep:a), forwards a/x (and a:x forwards c/z, a second
+# level), and b?/y, which brings y only when b is on otherwise (p:g does).
+[workspace]
+resolver = "2"
+members = ["p", "a", "b", "c", "e"]

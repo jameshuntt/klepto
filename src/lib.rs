@@ -25,8 +25,8 @@ pub use crate::typing::types::{
 };
 
 pub use crate::resolve::cfg::{CfgEnv, CfgPredicate, Implication};
-pub use crate::resolve::features::{DepInfo, DepKind, FeatureEnable, FeatureInfo, FeatureModel, UngatedUse};
-pub use crate::graph::{Affected, CfgEdgeViolation, EdgeKind, ItemEdge, ItemGraph, ItemNode, NodeKind, UnresolvedReference};
+pub use crate::resolve::features::{DepInfo, DepKind, EnableBy, FeatureEdge, FeatureEnable, FeatureInfo, FeatureKey, FeatureModel, UngatedUse};
+pub use crate::graph::{Affected, CfgEdgeViolation, EdgeKind, FeatureChain, FeatureItemMap, FeatureItems, ItemEdge, ItemGraph, ItemNode, NodeKind, UnresolvedReference};
 pub use crate::gate::oracle::{
     check_matrix, parse_cargo_json, CheckJob, ConvergeStatus, Convergence, Diagnostic, FnOracle, MissedGate, Oracle, OracleResult, Round,
 };

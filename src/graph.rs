@@ -2,7 +2,7 @@
 //! reference — and the closure queries on it.
 
 use crate::resolve::cfg::{CfgPredicate, Implication};
-use crate::resolve::features::{dep_lost_without, requires_feature};
+use crate::resolve::features::{dep_lost_without, feature_closure, feature_steps, requires_feature, FeatureEdge, FeatureKey, FeatureModel};
 use crate::klepto::Klepto;
 use crate::model::{FileLocation, Resolution, UseKind};
 use crate::resolve::{file_packages, join_key, norm};
@@ -213,6 +213,80 @@ pub struct Affected {
     pub uses_lost_dep: Vec<String>,
     /// Everything else reached through Reference / ReExport edges.
     pub transitive: Vec<String>,
+}
+
+/// One node of a feature's closure and the items it brings: for a feature
+/// of a crate, the crate's items whose own cfg cannot hold without it (as
+/// `affected_by_feature(..).gated` computes them); for a crate itself (an
+/// optional dependency turned on), its items no feature of it gates.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FeatureItems {
+    pub key: FeatureKey,
+    /// Sorted ids.
+    pub items: Vec<String>,
+    /// The edge that brought it (the shortest chain's last); `None` for
+    /// the feature asked about.
+    pub enabled_by: Option<FeatureEdge>,
+    /// Whether the crate was scanned: one that was not has no model and
+    /// no items, and its features are not followed.
+    pub scanned: bool,
+}
+
+/// `feature_items(package, feature)`: everything the feature brings, in
+/// its crate and in its dependencies, crate by crate.
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FeatureItemMap {
+    pub package: String,
+    pub feature: String,
+    /// The closure, breadth first from the feature asked about.
+    pub entries: Vec<FeatureItems>,
+    /// `name?/feat` entries whose dependency nothing in the closure turns
+    /// on: they bring `feat` only when something else turns `name` on.
+    pub weak_pending: Vec<FeatureEdge>,
+}
+
+impl FeatureItemMap {
+    pub fn get(&self, package: &str, feature: Option<&str>) -> Option<&FeatureItems> {
+        self.entries.iter().find(|e| e.key.package == package && e.key.feature.as_deref() == feature)
+    }
+
+    /// Crate → its entries.
+    pub fn by_crate(&self) -> BTreeMap<&str, Vec<&FeatureItems>> {
+        let mut out: BTreeMap<&str, Vec<&FeatureItems>> = BTreeMap::new();
+        for e in &self.entries {
+            out.entry(e.key.package.as_str()).or_default().push(e);
+        }
+        out
+    }
+
+    /// Every item the feature brings in one crate.
+    pub fn items_of(&self, package: &str) -> BTreeSet<&str> {
+        self.entries.iter().filter(|e| e.key.package == package).flat_map(|e| e.items.iter().map(String::as_str)).collect()
+    }
+}
+
+/// `features_bringing(package, item)`: one feature that brings the item,
+/// with the chain of entries from it to the feature (or crate) of the
+/// item's own crate that gates the item.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct FeatureChain {
+    pub package: String,
+    pub feature: String,
+    /// The edges in order, from `package:feature` on (the shortest chain);
+    /// empty when the feature is the item's own gate.
+    pub edges: Vec<FeatureEdge>,
+    /// The node of the item's own crate the chain ends on: the feature
+    /// gating the item, or the crate itself for an item no feature gates.
+    /// An item that needs several features has a chain to each.
+    pub gate: FeatureKey,
+}
+
+impl FeatureChain {
+    /// The chain has a `name?/feat` entry: it brings the item only when
+    /// that dependency is on otherwise.
+    pub fn weak(&self) -> bool {
+        self.edges.iter().any(|e| e.weak)
+    }
 }
 
 /// An item references another item that is not compiled in some
@@ -513,18 +587,7 @@ impl Klepto {
         };
         let g = &self.graph;
 
-        // the same few cfg predicates repeat across hundreds of items:
-        // judge each distinct one once (scale-run fix: 2 s → ms per feature)
-        let mut memo: HashMap<String, bool> = HashMap::new();
-        let gated: BTreeSet<String> = g
-            .nodes
-            .values()
-            .filter(|n| {
-                n.package.as_deref() == Some(package)
-                    && *memo.entry(n.cfg.render()).or_insert_with(|| requires_feature(model, &n.cfg, feature))
-            })
-            .map(|n| n.id.clone())
-            .collect();
+        let gated = gated_items(model, feature, g.nodes.values().filter(|n| n.package.as_deref() == Some(package)));
 
         let lost_targets: HashSet<String> = model
             .dependencies
@@ -549,6 +612,91 @@ impl Klepto {
             .collect();
 
         Affected { gated: gated.into_iter().collect(), uses_lost_dep: uses.into_iter().collect(), transitive }
+    }
+
+    /// What `feature` of `package` brings, crate by crate: the closure of
+    /// features it turns on (its own, `name/feat` into each dependency's
+    /// features and on down, `dep:name` turning the dependency itself on
+    /// with its default and declared features, `name?/feat` once `name` is
+    /// on) and, for each, the items it gates, with the edge that brought
+    /// it. Each (crate, feature)'s items are computed once. Empty for a
+    /// package without a model.
+    pub fn feature_items(&self, package: &str, feature: &str) -> FeatureItemMap {
+        if !self.features.contains_key(package) {
+            return FeatureItemMap { package: package.to_string(), feature: feature.to_string(), ..Default::default() };
+        }
+        let (closure, weak_pending) = feature_closure(&self.features, package, feature);
+        let mut items = KeyItems::new(self);
+        let entries = closure
+            .into_iter()
+            .map(|(key, enabled_by)| FeatureItems { items: items.of(&key), scanned: self.features.contains_key(&key.package), key, enabled_by })
+            .collect();
+        FeatureItemMap { package: package.to_string(), feature: feature.to_string(), entries, weak_pending }
+    }
+
+    /// The reverse of `feature_items`: every (package, feature) whose
+    /// closure reaches a node of `item`'s crate that brings `item`, each
+    /// with its shortest chain. Weak entries are followed (`FeatureChain::weak`
+    /// says so). Empty when `item` is not a node of `package`.
+    pub fn features_bringing(&self, package: &str, item: &str) -> Vec<FeatureChain> {
+        if self.graph.node(item).and_then(|n| n.package.as_deref()) != Some(package) {
+            return Vec::new();
+        }
+        let mut items = KeyItems::new(self);
+        let mut gates: Vec<FeatureKey> = Vec::new();
+        if let Some(model) = self.features.get(package) {
+            for f in model.features.keys() {
+                let key = FeatureKey::new(package, Some(f));
+                if items.of(&key).binary_search_by(|x| x.as_str().cmp(item)).is_ok() {
+                    gates.push(key);
+                }
+            }
+        }
+        if gates.is_empty() {
+            gates.push(FeatureKey::new(package, None));
+        }
+        // every step of every model, reversed
+        let mut into: HashMap<FeatureKey, Vec<FeatureEdge>> = HashMap::new();
+        for (p, model) in &self.features {
+            for f in model.features.keys() {
+                for step in feature_steps(&self.features, p, f) {
+                    into.entry(step.to).or_default().push(step.edge);
+                }
+            }
+        }
+        // breadth first back from the gates: each node's next edge toward
+        // one, the node that edge reaches, and the gate it leads to
+        type Next = (Option<(FeatureEdge, FeatureKey)>, FeatureKey);
+        let mut next: BTreeMap<FeatureKey, Next> = BTreeMap::new();
+        let mut queue: std::collections::VecDeque<FeatureKey> = std::collections::VecDeque::new();
+        for gate in &gates {
+            next.insert(gate.clone(), (None, gate.clone()));
+            queue.push_back(gate.clone());
+        }
+        while let Some(key) = queue.pop_front() {
+            let gate = next[&key].1.clone();
+            let mut edges: Vec<&FeatureEdge> = into.get(&key).map(|v| v.iter().collect()).unwrap_or_default();
+            edges.sort();
+            for e in edges {
+                let from = e.from();
+                if !next.contains_key(&from) {
+                    next.insert(from.clone(), (Some((e.clone(), key.clone())), gate.clone()));
+                    queue.push_back(from);
+                }
+            }
+        }
+        let mut out = Vec::new();
+        for (key, (_, gate)) in &next {
+            let Some(feature) = &key.feature else { continue };
+            let mut edges = Vec::new();
+            let mut cur = key;
+            while let Some((Some((e, to)), _)) = next.get(cur) {
+                edges.push(e.clone());
+                cur = to;
+            }
+            out.push(FeatureChain { package: key.package.clone(), feature: feature.clone(), edges, gate: gate.clone() });
+        }
+        out
     }
 
     /// Item-to-item references whose cfg does not guarantee the target
@@ -580,5 +728,65 @@ impl Klepto {
             }
         }
         out
+    }
+}
+
+/// The items of `nodes` whose own cfg cannot hold without `feature`. The
+/// same few cfg predicates repeat across hundreds of items: each distinct
+/// one is judged once (scale-run fix: 2 s → ms per feature).
+fn gated_items<'n>(model: &FeatureModel, feature: &str, nodes: impl IntoIterator<Item = &'n ItemNode>) -> BTreeSet<String> {
+    let mut memo: HashMap<String, bool> = HashMap::new();
+    nodes
+        .into_iter()
+        .filter(|n| *memo.entry(n.cfg.render()).or_insert_with(|| requires_feature(model, &n.cfg, feature)))
+        .map(|n| n.id.clone())
+        .collect()
+}
+
+/// The items of each closure node, computed once per (crate, feature), on
+/// one index of the graph's nodes by crate.
+struct KeyItems<'k> {
+    k: &'k Klepto,
+    by_package: HashMap<&'k str, Vec<&'k ItemNode>>,
+    memo: HashMap<FeatureKey, Vec<String>>,
+}
+
+impl<'k> KeyItems<'k> {
+    fn new(k: &'k Klepto) -> Self {
+        let mut by_package: HashMap<&str, Vec<&ItemNode>> = HashMap::new();
+        for n in k.graph.nodes.values() {
+            if let Some(p) = &n.package {
+                by_package.entry(p.as_str()).or_default().push(n);
+            }
+        }
+        KeyItems { k, by_package, memo: HashMap::new() }
+    }
+
+    /// Sorted ids: a feature's gated items; for the crate itself, the
+    /// items no feature of it gates. Empty for a crate without a model.
+    fn of(&mut self, key: &FeatureKey) -> Vec<String> {
+        if let Some(hit) = self.memo.get(key) {
+            return hit.clone();
+        }
+        let k = self.k;
+        let Some(model) = k.features.get(&key.package) else { return Vec::new() };
+        let items: Vec<String> = match &key.feature {
+            Some(f) => {
+                let nodes = self.by_package.get(key.package.as_str()).map(Vec::as_slice).unwrap_or_default();
+                gated_items(model, f, nodes.iter().copied()).into_iter().collect()
+            }
+            None => {
+                let mut gated: BTreeSet<String> = BTreeSet::new();
+                for f in model.features.keys() {
+                    gated.extend(self.of(&FeatureKey::new(&key.package, Some(f))));
+                }
+                let nodes = self.by_package.get(key.package.as_str()).map(Vec::as_slice).unwrap_or_default();
+                let mut ids: Vec<String> = nodes.iter().filter(|n| !gated.contains(&n.id)).map(|n| n.id.clone()).collect();
+                ids.sort();
+                ids
+            }
+        };
+        self.memo.insert(key.clone(), items.clone());
+        items
     }
 }

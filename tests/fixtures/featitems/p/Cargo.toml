@@ -1,0 +1,19 @@
+[package]
+name = "p"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+a = { path = "../a", optional = true }
+b = { path = "../b", optional = true }
+e = { path = "../e", optional = true }
+
+[features]
+f = ["dep:a", "a/x", "b?/y"]
+# turns b on: f's b?/y now brings y
+g = ["f", "dep:b"]
+# strong: turns b on and brings y
+h = ["b/y"]
+# e is not named with dep: anywhere, so cargo makes an implicit feature e;
+# e/w turns it on
+i = ["e/w"]

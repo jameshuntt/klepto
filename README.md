@@ -87,7 +87,13 @@ does not guarantee it is there.
 references, imports, re-exports and containment, with `dependents_of`,
 `dependencies_of`, transitive closures, `affected_by_feature`,
 `affected_by_dep`, and `cfg_edge_violations` (an edge whose condition does
-not imply its target's).
+not imply its target's). `feature_items(package, feature)` follows a
+feature across crates: its own features, `name/feat` into the dependency's
+features and on down, `dep:name` turning the dependency on with its default
+and declared features, `name?/feat` once `name` is on; for each crate and
+feature reached, the items it gates and the entry that brought it.
+`features_bringing(package, item)` is the reverse: every feature whose
+closure brings the item, with the chain of entries.
 
 **Layer 4 — gate planning.** A `klepto.toml` says what the feature model
 should become; `plan_gates` turns the difference into `#[cfg]` attributes
