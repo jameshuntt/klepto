@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.3.4 (2026-10-20)
+
+A crate's features as a change leaves them. custodian's `declare_feature` writes a feature into a manifest, and three things in klepto's feature model stood in the way. A program built through change specs (the pantry) found all three: a feature named like the dependency it turns on was never written; a `cfg_attr` derive was read as a use of the dependency without its feature, which put the whole crate behind it; and nothing could say what a feature not declared yet would bring, or whether `a/y` names a feature `a` has.
+
+### What was missing
+
+- `apply_spec` put the spec's features in, then recomputed the implicit ones, which took `chrono = ["dep:chrono"]` for cargo's implicit feature: [spec.rs L99 at 0.3.3](https://github.com/jameshuntt/klepto/blob/2b534cb/src/gate/spec.rs#L99), [features.rs L534-L557 at 0.3.3](https://github.com/jameshuntt/klepto/blob/2b534cb/src/resolve/features.rs#L534-L557). `manifest_edits` skips implicit features, so the manifest kept `chrono = []` beside an optional `chrono`, and cargo refused it ("optional dependency `chrono` is not included in any feature").
+- The implicit feature of a dashed dependency was keyed `shop_marks`, while cargo names it `shop-marks`, so cargo's own `shop-marks = ["dep:shop-marks"]` read as a declared feature.
+- `affected_by_feature` counted every edge to a lost dependency, whatever its cfg: [graph.rs L599-L604 at 0.3.3](https://github.com/jameshuntt/klepto/blob/2b534cb/src/graph.rs#L599-L604). With `json` off, the five types deriving `serde::Serialize` under `cfg_attr(feature = "json", ..)` were "uses lost", and every item reaching them went too: the pantry's plan said all 26 items go, where only `to_json` and its test do.
+
+### The model as a change leaves it
+
+- A feature the spec names is declared, even one named like its dependency: [spec.rs L100-L108](https://github.com/jameshuntt/klepto/blob/b2c670b/src/gate/spec.rs#L100-L108). The implicit feature keeps the manifest's spelling: [features.rs L548-L550](https://github.com/jameshuntt/klepto/blob/b2c670b/src/resolve/features.rs#L548-L550).
+- A use that exists only with the feature on is not lost when it is off: [graph.rs L599-L607](https://github.com/jameshuntt/klepto/blob/b2c670b/src/graph.rs#L599-L607).
+- `Klepto::feature_items_with(desired, feature)`: the closure of `feature_items` over a package's model as a change leaves it, so a feature not declared yet is followed as if it were, with its weak entries pending: [graph.rs L628-L641](https://github.com/jameshuntt/klepto/blob/b2c670b/src/graph.rs#L628-L641).
+- `Klepto::dependency_feature_names(package, dependency)`: the features a dependency declares, from the member's model, else from `Klepto::dependency_features`, which the frozen `cargo metadata` that finds dependency macros now fills: [graph.rs L643-L652](https://github.com/jameshuntt/klepto/blob/b2c670b/src/graph.rs#L643-L652), [klepto.rs L113-L116](https://github.com/jameshuntt/klepto/blob/b2c670b/src/klepto.rs#L113-L116), [klepto.rs L270](https://github.com/jameshuntt/klepto/blob/b2c670b/src/klepto.rs#L270).
+
+### Proof
+
+- tests/gate.rs: `a_feature_named_like_the_dependency_it_turns_on_is_written` ([L125](https://github.com/jameshuntt/klepto/blob/b2c670b/tests/gate.rs#L125)): `MakeOptional devd` then `SetFeature devd = ["dep:devd"]`; it fails on 0.3.3. `a_dashed_dependencys_implicit_feature_keeps_the_manifests_name` ([L145](https://github.com/jameshuntt/klepto/blob/b2c670b/tests/gate.rs#L145)).
+- `a_use_under_cfg_attr_of_the_feature_is_not_lost_without_it` ([L440](https://github.com/jameshuntt/klepto/blob/b2c670b/tests/gate.rs#L440)), on the new fixture `cfgattr`: `uses_lost_dep` is `app::uses` alone; on 0.3.3 it is `app::Kept` and `app::uses`.
+- `a_feature_not_declared_yet_is_followed_over_the_model_a_change_leaves` ([L448](https://github.com/jameshuntt/klepto/blob/b2c670b/tests/gate.rs#L448)): on `featitems`, a new feature `["a/x"]` brings `a:x` and, a level down, `c:z`; `["b?/y"]` leaves one weak entry pending. `a_registry_dependencys_features_are_read_from_cargo_metadata` ([L466](https://github.com/jameshuntt/klepto/blob/b2c670b/tests/gate.rs#L466)).
+- On the pantry: the features plan with `chrono = ["dep:chrono"]` writes `chrono = { version = "0.4", optional = true }` and the feature (it was CP0005 on every form); "with json off" names `to_json` and its test, depth function.
+- Nothing public removed or changed: the rustdoc JSON of 0.3.3 and 0.3.4 differ by three additions, `Klepto::dependency_features`, `Klepto::dependency_feature_names` and `Klepto::feature_items_with`.
+
 ## 0.3.3 (2026-10-20)
 
 The parsed model, kept. A consumer that reads the same code again parsed it again: custodian's every `run` on the kit's workspace (430 packages with a model, 1,936 files) spent 29 to 36 s and about 5.5 GB re-parsing, and threw the parse away; the reading itself is milliseconds. Now `Klepto` has a serde form, so a consumer can keep the model once per code fingerprint and read it back.
