@@ -4,7 +4,7 @@ use proc_macro2::Span;
 use std::collections::HashMap;
 use syn::{spanned::Spanned, visit::Visit};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FnSpan {
     pub fq_name: String,
     pub is_public: bool,
@@ -32,7 +32,7 @@ impl FnSpan {
 
 /// Which function encloses a location. Only meaningful with the
 /// `span-locations` feature (on by default).
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EnclosingIndex {
     by_file: HashMap<std::path::PathBuf, Vec<FnSpan>>,
 }

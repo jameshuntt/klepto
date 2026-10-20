@@ -32,11 +32,14 @@ pub enum KleptoError {
     CargoMeta(#[from] cargo_metadata::Error),
 }
 
-#[derive(Debug, Clone)]
+/// A parsed file. Its serde form holds everything but the syntax tree: syn's trees have no serde form, and klepto's
+/// tree is the expanded one (macros' items spliced in), which only a parse makes. Read back, `ast` is empty.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ParsedFile {
     pub path: PathBuf,
     pub modified: SystemTime,
     pub source: String,
+    #[serde(skip, default = "empty_file")]
     pub ast: syn::File,
     pub is_no_std_crate_root: bool,
     /// Canonical path of the module this file holds (`app::query`), filled
@@ -44,7 +47,17 @@ pub struct ParsedFile {
     pub module: Option<String>,
 }
 
-#[derive(Debug, Clone)]
+/// An empty syntax tree: what a [`ParsedFile`] read back from its serde form holds.
+fn empty_file() -> syn::File {
+    syn::File { shebang: None, attrs: Vec::new(), items: Vec::new() }
+}
+
+/// A parsed workspace. Its serde form is the whole model (every record, the module tree, the graph, the feature
+/// models, the packages, the enclosing-function index) and each file's source, without the syntax trees: read back,
+/// every record answers as the parse that wrote it did, with no cargo metadata, resolution or macro expansion run
+/// again; a reader that walks the trees (`ParsedFile::ast`, empty when read back) parses. A consumer keys a stored
+/// model by the code it was parsed from (`fingerprint`) and by [`Klepto::MODEL_VERSION`].
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Klepto {
     pub crate_name: String,
     /// The scanned root (`scan_workspace_root` / `scan_in_folder`), used by
@@ -110,10 +123,14 @@ pub struct Klepto {
     pub matches: Vec<MatchOccurrence>,
 
     /// Single-identifier paths waiting for the resolver; drained by the resolver.
+    #[serde(skip)]
     pub(crate) pending_singles: Vec<PathOccurrence>,
 }
 
 impl Klepto {
+    /// The version of the serde form: a stored model written by another klepto is parsed again, never read.
+    pub const MODEL_VERSION: &'static str = concat!("klepto-model-", env!("CARGO_PKG_VERSION"));
+
     #[allow(clippy::new_ret_no_self)]
     pub fn new(crate_name: impl Into<String>) -> KleptoBuilder {
         KleptoBuilder::new(crate_name)
