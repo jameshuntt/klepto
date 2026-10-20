@@ -625,6 +625,32 @@ impl Klepto {
     /// on) and, for each, the items it gates, with the edge that brought
     /// it. Each (crate, feature)'s items are computed once. Empty for a
     /// package without a model.
+    /// [`Klepto::feature_items`] over a package's model as a change would leave it (`desired`, its package's): a
+    /// feature not declared yet is followed as declared, what it brings and its weak entries named.
+    pub fn feature_items_with(&self, desired: &FeatureModel, feature: &str) -> FeatureItemMap {
+        let package = desired.package.clone();
+        let mut models = self.features.clone();
+        models.insert(package.clone(), desired.clone());
+        let (closure, weak_pending) = feature_closure(&models, &package, feature);
+        let mut items = KeyItems::new(self);
+        let entries = closure
+            .into_iter()
+            .map(|(key, enabled_by)| FeatureItems { items: items.of(&key), scanned: models.contains_key(&key.package), key, enabled_by })
+            .collect();
+        FeatureItemMap { package, feature: feature.to_string(), entries, weak_pending }
+    }
+
+    /// The features a crate's dependency declares: the member's own model (its declared and implicit features),
+    /// else what cargo metadata says the dependency declares; `None` when neither is known.
+    pub fn dependency_feature_names(&self, package: &str, dependency: &str) -> Option<BTreeSet<String>> {
+        let dep = self.features.get(package)?.dependencies.iter().find(|d| d.name == crate::resolve::norm(dependency))?;
+        let pkg = crate::resolve::norm(&dep.package);
+        match self.features.get(&pkg) {
+            Some(m) => Some(m.features.keys().cloned().collect()),
+            None => self.dependency_features.get(&pkg).cloned(),
+        }
+    }
+
     pub fn feature_items(&self, package: &str, feature: &str) -> FeatureItemMap {
         if !self.features.contains_key(package) {
             return FeatureItemMap { package: package.to_string(), feature: feature.to_string(), ..Default::default() };

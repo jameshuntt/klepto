@@ -110,6 +110,10 @@ pub struct Klepto {
     pub macros_known: Vec<(String, String)>,
     /// Why dependency macros were not (fully) harvested, if so.
     pub dep_macro_note: Option<String>,
+    /// The features each dependency that is not a member declares (its package name, `-` → `_`), from the same
+    /// frozen `cargo metadata` that finds its macros: what a `dep/feat` entry can name. Empty when that failed.
+    #[serde(default)]
+    pub dependency_features: BTreeMap<String, BTreeSet<String>>,
 
     pub index: crate::syntax::index::EnclosingIndex,
 
@@ -208,6 +212,7 @@ pub struct KleptoBuilder {
     /// harvesting; empty when the lockfile cannot be resolved offline.
     dep_sources: Vec<(String, PathBuf)>,
     dep_macro_note: Option<String>,
+    dependency_features: BTreeMap<String, BTreeSet<String>>,
     no_dep_macros: bool,
 }
 
@@ -262,6 +267,7 @@ impl KleptoBuilder {
                     if let Some(dir) = p.manifest_path.parent() {
                         self.dep_sources.push((norm_crate_root(&p.name), dir.join("src").into_std_path_buf()));
                     }
+                    self.dependency_features.entry(norm_crate_root(&p.name)).or_default().extend(p.features.keys().cloned());
                 }
             }
             Err(e) => self.dep_macro_note = Some(format!("dependency macros not harvested: {}", e.to_string().lines().next().unwrap_or_default())),
@@ -658,6 +664,7 @@ impl KleptoBuilder {
             expansions,
             macros_known,
             dep_macro_note,
+            dependency_features: self.dependency_features,
             root: self.scan_root.clone(),
             index,
             skipped_files,

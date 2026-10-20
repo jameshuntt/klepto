@@ -443,3 +443,29 @@ fn a_use_under_cfg_attr_of_the_feature_is_not_lost_without_it() {
     assert_eq!(a.gated, ["app::gone"]);
     assert_eq!(a.uses_lost_dep, ["app::uses"], "Kept's derive exists only with x on: Kept stays");
 }
+
+#[test]
+fn a_feature_not_declared_yet_is_followed_over_the_model_a_change_leaves() {
+    let k = Klepto::new("p").scan_workspace_root(fixture("featitems")).expect("cargo metadata on fixture featitems").parse().expect("parse");
+    // what `a` declares, read from its model: `a/x` can name x, never y
+    assert_eq!(k.dependency_feature_names("p", "a").unwrap(), ["d", "default", "x"].iter().map(|s| s.to_string()).collect::<BTreeSet<_>>());
+    let current = k.feature_model("p").unwrap();
+    let declare = |name: &str, list: &[&str]| current.apply_spec(&PackageSpec { features: [(name.to_string(), strs(list))].into_iter().collect(), ..Default::default() });
+    // a new feature turning on a/x brings a's x and, a second level down, c's z
+    let n = k.feature_items_with(&declare("n", &["a/x"]), "n");
+    let keys: Vec<String> = n.entries.iter().map(|e| format!("{}:{}", e.key.package, e.key.feature.clone().unwrap_or_default())).collect();
+    assert!(keys.contains(&"a:x".to_string()) && keys.contains(&"c:z".to_string()), "{keys:?}");
+    assert!(n.weak_pending.is_empty());
+    // a weak entry, b?/y: pending until something turns b on
+    let w = k.feature_items_with(&declare("w", &["b?/y"]), "w");
+    assert_eq!(w.weak_pending.len(), 1, "{:?}", w.weak_pending);
+    assert!(w.weak_pending[0].weak && matches!(&w.weak_pending[0].entry, FeatureEnable::DepFeature { dep, feature, weak: true } if dep == "b" && feature == "y"));
+}
+
+#[test]
+fn a_registry_dependencys_features_are_read_from_cargo_metadata() {
+    let k = Klepto::new("app").scan_workspace_root(fixture("expand")).expect("cargo metadata on fixture expand").parse().expect("parse");
+    // lazy_static declares spin_no_std; the frozen metadata that finds its macros says so
+    assert!(k.dep_macro_note.is_none(), "{:?}", k.dep_macro_note);
+    assert!(k.dependency_feature_names("app", "lazy_static").unwrap().contains("spin_no_std"), "{:?}", k.dependency_features);
+}
