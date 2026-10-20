@@ -596,10 +596,14 @@ impl Klepto {
             .flat_map(|d| g.targets_of(&d.name))
             .collect();
 
+        // a use that exists only with the feature on (`#[cfg_attr(feature = "json", derive(serde::Serialize))]`)
+        // is not lost when it is off: the item stays, the use goes with the feature
+        let mut memo: HashMap<String, bool> = HashMap::new();
         let uses: BTreeSet<String> = g
             .edges
             .iter()
             .filter(|e| DEPENDENT_KINDS.contains(&e.kind) && lost_targets.contains(&e.to))
+            .filter(|e| !*memo.entry(e.cfg.render()).or_insert_with(|| requires_feature(model, &e.cfg, feature)))
             .map(|e| e.from.clone())
             .filter(|f| g.node(f).is_some_and(|n| n.package.as_deref() == Some(package)) && !gated.contains(f))
             .collect();

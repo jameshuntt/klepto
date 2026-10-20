@@ -1,0 +1,5 @@
+# affected_by_feature: a use under `cfg_attr(feature = "x", ..)` exists only with x on, so the item that holds it
+# is not lost with x off; an ungated use of the dependency x turns on is.
+[workspace]
+resolver = "2"
+members = ["app", "helper"]

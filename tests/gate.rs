@@ -435,3 +435,11 @@ fn converge_respects_max_rounds() {
     assert!(c.rounds.len() <= 3);
     assert_eq!(c.forced.len(), 1, "the same forced gate is not added twice");
 }
+
+#[test]
+fn a_use_under_cfg_attr_of_the_feature_is_not_lost_without_it() {
+    let k = Klepto::new("app").scan_workspace_root(fixture("cfgattr")).expect("cargo metadata on fixture cfgattr").parse().expect("parse");
+    let a = k.affected_by_feature("app", "x");
+    assert_eq!(a.gated, ["app::gone"]);
+    assert_eq!(a.uses_lost_dep, ["app::uses"], "Kept's derive exists only with x on: Kept stays");
+}

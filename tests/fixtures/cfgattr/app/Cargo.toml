@@ -1,0 +1,10 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+helper = { path = "../helper", optional = true }
+
+[features]
+x = ["dep:helper"]
