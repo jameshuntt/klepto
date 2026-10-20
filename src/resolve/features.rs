@@ -541,11 +541,13 @@ pub(crate) fn recompute_implicit(model: &mut FeatureModel) {
         let referenced = model
             .features
             .iter()
-            .any(|(f, info)| f != &dep && info.enables.iter().any(|e| matches!(e, FeatureEnable::Dep(d) if d == &dep)));
+            .any(|(f, info)| norm(f) != dep && info.enables.iter().any(|e| matches!(e, FeatureEnable::Dep(d) if d == &dep)));
         if referenced {
             continue;
         }
-        let entry = model.features.entry(dep.clone()).or_insert_with(|| FeatureInfo {
+        // cargo names the implicit feature as the manifest names the dependency (`shop-marks`), not normalized
+        let key = model.features.keys().find(|f| norm(f) == dep).cloned().unwrap_or_else(|| dep.clone());
+        let entry = model.features.entry(key).or_insert_with(|| FeatureInfo {
             enables: vec![FeatureEnable::Dep(dep.clone())],
             implicit: true,
         });

@@ -97,6 +97,16 @@ impl FeatureModel {
             m.features.insert("default".into(), FeatureInfo { enables, implicit: false });
         }
         recompute_implicit(&mut m);
+        // a feature the spec names is declared, even one named like the dependency it turns on
+        // (`chrono = ["dep:chrono"]`): it is written to the manifest, never taken for cargo's implicit one
+        for name in spec.features.keys() {
+            if let Some(info) = m.features.get_mut(name) {
+                info.implicit = false;
+            }
+            for d in m.dependencies.iter_mut().filter(|d| d.name == norm(name)) {
+                d.implicit_feature = false;
+            }
+        }
         m
     }
 }

@@ -121,6 +121,49 @@ fn manifest_edits_diff() {
     assert!(manifest_edits(current, current).is_empty());
 }
 
+#[test]
+fn a_feature_named_like_the_dependency_it_turns_on_is_written() {
+    // `devd = ["dep:devd"]`: the spec declares it, so it is no implicit feature and the manifest gets it
+    let k = plan_ws();
+    let current = k.feature_model("app").unwrap();
+    let named = PackageSpec {
+        features: [("devd".to_string(), strs(&["dep:devd"]))].into_iter().collect(),
+        optional: ["devd".to_string()].into_iter().collect(),
+        default: None,
+    };
+    let d = current.apply_spec(&named);
+    assert!(!d.features["devd"].implicit, "declared by the spec");
+    assert!(!d.dep("devd").unwrap().implicit_feature);
+    assert_eq!(
+        manifest_edits(current, &d),
+        vec![ManifestEdit::MakeOptional { dep: "devd".into() }, ManifestEdit::SetFeature { name: "devd".into(), enables: strs(&["dep:devd"]) }]
+    );
+    assert_eq!(d.features_enabling("devd"), ["devd".to_string()].into_iter().collect::<BTreeSet<_>>());
+}
+
+#[test]
+fn a_dashed_dependencys_implicit_feature_keeps_the_manifests_name() {
+    // cargo metadata lists `shop-marks = ["dep:shop-marks"]` for an optional `shop-marks` no feature names: it is
+    // cargo's implicit feature (not a declared one), under the dependency's name as the manifest writes it
+    let dep = |optional: bool| DepInfo { name: "shop_marks".into(), package: "shop-marks".into(), optional, kind: DepKind::Normal, target: None, default_features: true, features: Vec::new(), implicit_feature: false };
+    let mut read = FeatureModel::default();
+    read.package = "shop".into();
+    read.features.insert("shop-marks".into(), FeatureInfo { enables: vec![FeatureEnable::Dep("shop_marks".into())], implicit: false });
+    read.dependencies = vec![dep(true)];
+    let m = read.apply_spec(&PackageSpec::default());
+    assert!(m.features["shop-marks"].implicit, "{:?}", m.features);
+    assert!(!m.features.contains_key("shop_marks"));
+    assert!(m.dep("shop_marks").unwrap().implicit_feature);
+    // required again: the implicit feature goes with it
+    let mut required = m.clone();
+    required.dependencies = vec![dep(false)];
+    assert!(required.apply_spec(&PackageSpec::default()).features.is_empty());
+    // declared by a spec under that name: written, not implicit
+    let named = PackageSpec { features: [("shop-marks".to_string(), strs(&["dep:shop-marks"]))].into_iter().collect(), ..Default::default() };
+    let d = m.apply_spec(&named);
+    assert!(!d.features["shop-marks"].implicit && !d.dep("shop_marks").unwrap().implicit_feature);
+}
+
 // ---------------------------------------------------------------- C rules
 
 #[test]
