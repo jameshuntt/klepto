@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.3.3 (2026-10-20)
+
+The parsed model, kept. A consumer that reads the same code again parsed it again: custodian's every `run` on the kit's workspace (430 packages with a model, 1,936 files) spent 29 to 36 s and about 5.5 GB re-parsing, and threw the parse away; the reading itself is milliseconds. Now `Klepto` has a serde form, so a consumer can keep the model once per code fingerprint and read it back.
+
+### What was missing
+
+- `Klepto` and `ParsedFile` derived only `Debug` and `Clone` ([klepto.rs L35-L48 at 0.3.2](https://github.com/jameshuntt/klepto/blob/70c0c6c9cde44b47d14079afbe7670b975692a6d/src/klepto.rs#L35-L48)); every record inside them already had serde (`ItemDecl`, `CallOccurrence`, `ModuleTree`, `ItemGraph`, `FeatureModel`, `PackageInfo`, ...), except the enclosing-function index ([index.rs L8 and L35 at 0.3.2](https://github.com/jameshuntt/klepto/blob/70c0c6c9cde44b47d14079afbe7670b975692a6d/src/syntax/index.rs#L7-L36)).
+
+### The serde form
+
+- `Klepto` and `ParsedFile` derive `Serialize` and `Deserialize`: [klepto.rs L35-L61](https://github.com/jameshuntt/klepto/blob/4a9e277fc251d036aee72cb02e453131517554ac/src/klepto.rs#L35-L61). `FnSpan` and `EnclosingIndex` too: [index.rs L7-L36](https://github.com/jameshuntt/klepto/blob/4a9e277fc251d036aee72cb02e453131517554ac/src/syntax/index.rs#L7-L36).
+- The syntax trees are not in it. syn's trees have no serde form, and the tree klepto holds is the expanded one (macros' items spliced in), which only a parse makes; parsing the source again gives a different tree, so klepto does not pretend to restore it. Read back, `ParsedFile::ast` is empty ([klepto.rs L42-L53](https://github.com/jameshuntt/klepto/blob/4a9e277fc251d036aee72cb02e453131517554ac/src/klepto.rs#L42-L53)); every record answers as the parse did. A reader that walks the trees parses.
+- The resolver's queue (`pending_singles`, crate-private, drained by the parse) is skipped: [klepto.rs L126](https://github.com/jameshuntt/klepto/blob/4a9e277fc251d036aee72cb02e453131517554ac/src/klepto.rs#L126).
+- `Klepto::MODEL_VERSION` (`klepto-model-0.3.3`) names the klepto that wrote a model, so a model written by another version is parsed again, never read: [klepto.rs L132](https://github.com/jameshuntt/klepto/blob/4a9e277fc251d036aee72cb02e453131517554ac/src/klepto.rs#L132).
+
+### Proof
+
+- tests/model.rs, `a_model_read_back_is_the_model_that_was_written`: the `expand` fixture (local macros expanded, a registry macro harvested) and the `bins` fixture (a binary that is a crate root of its own), each parsed, written as JSON and read back: the whole model is the same JSON, no file holds a tree, the crate roots and item counts are equal, every function's place finds the same enclosing function, every item resolves in the graph as before. `the_model_version_names_the_klepto_that_wrote_it`.
+- On the kit's workspace, through custodian_kit 0.3.3 (CBOR, release build): parsed in 35.9 s at 5.7 GB; read back in 3.3 s at 1.8 GB, 64,133 items and 1,936 files the same; the model is 1.1 GB on disk.
+- Nothing public removed or changed: the rustdoc JSON of 0.3.2 and 0.3.3 differ only by the added `MODEL_VERSION` and the serde impls on `Klepto`, `ParsedFile`, `FnSpan` and `EnclosingIndex`.
+
 ## 0.3.2 (2026-10-19)
 
 A feature's items across crates. A `[features]` entry can name a feature of a dependency (`a/x`, `b?/y`), and that feature gates items of its own, and its own entries name features of its dependencies. Before, klepto parsed those entries but answered for one crate only: `affected_by_feature(p, f)` gave p's items and nothing of what `a/x` brings into a. Now the map goes down through the dependencies, crate by crate, with the items each feature gates and the entry that brought it.
