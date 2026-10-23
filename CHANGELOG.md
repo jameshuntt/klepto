@@ -1,5 +1,33 @@
 # Changelog
 
+## 0.3.5 (2026-10-23)
+
+What cargo resolved, read as it is. An integration package failed on its dependencies six times in a row: a crate
+inherited `hex` through `workspace = true` from a root that had no such entry, cargo said so, the agent fixed that one
+line, and the next build failed on the next thing. custodian's requirements reading reads all of it before anything
+is built, and it needs from klepto what cargo already knows: each package's edition and rust-version, the requirement
+each dependency was declared with, its source, the resolve's edges and the features cargo turned on. klepto ran
+`cargo metadata` for its scan and kept only the members, and its feature model could only be made from cargo's
+output, so a manifest cargo refuses had no model at all. Nothing here resolves anything: every field is cargo's or
+absent.
+
+### What was missing
+
+- `build_feature_models` built each scanned member's model inside its loop and nowhere else: [features.rs L572-L609 at 0.3.4](https://github.com/jameshuntt/klepto/blob/c18f8c258cf63ff318296fc240e981845fc51f8a/src/resolve/features.rs#L572-L609). No rust-version, edition, requirement or source was kept for any package.
+
+### What cargo resolved, as cargo wrote it
+
+- `CargoWorkspace`: one `cargo metadata` read from its JSON (`from_json`), or run here (`read`: `--frozen`, no lock written and no network; or `--no-deps`): [lock.rs L72-L100](https://github.com/jameshuntt/klepto/blob/9c3f4d22b8aeda818311a01caac188c64eac6cd1/src/resolve/lock.rs#L72-L100). Each `CargoPackage` carries its id, edition, `rust_version`, manifest, source, the `DeclaredDependency` list (the requirement as cargo wrote it, target, path, registry) and klepto's feature model of it: [lock.rs L33-L49](https://github.com/jameshuntt/klepto/blob/9c3f4d22b8aeda818311a01caac188c64eac6cd1/src/resolve/lock.rs#L33-L49).
+- Read off the resolve, never recomputed: `closure` (every package a package reaches), `dependents` (direct, then every one that reaches it), `by_name` (every version of a package in the lock): [lock.rs L182-L225](https://github.com/jameshuntt/klepto/blob/9c3f4d22b8aeda818311a01caac188c64eac6cd1/src/resolve/lock.rs#L182-L225).
+- `version_meets(req, version)`: semver's answer for one pair, `None` when either does not parse: [lock.rs L229](https://github.com/jameshuntt/klepto/blob/9c3f4d22b8aeda818311a01caac188c64eac6cd1/src/resolve/lock.rs#L229).
+- `FeatureModel::from_declared`: the same model from `[features]` as written and the dependencies, cargo's implicit features included, for a manifest cargo cannot read yet; `FeatureEnable::parse` reads one entry in its four forms. `build_feature_models` now makes each model through it, so the two cannot drift: [features.rs L573-L631](https://github.com/jameshuntt/klepto/blob/9c3f4d22b8aeda818311a01caac188c64eac6cd1/src/resolve/features.rs#L573-L631).
+
+### Proof
+
+- tests/lock.rs on the new fixture `lockshape` (two members asking for two versions of one path package): `the_resolve_carries_each_packages_edition_rust_version_and_edges` ([L12](https://github.com/jameshuntt/klepto/blob/9c3f4d22b8aeda818311a01caac188c64eac6cd1/tests/lock.rs#L12)), editions, rust-versions, a rename's requirement, the unified feature `quick`, the closure and the reverse dependents; `no_deps_reads_the_members_without_a_resolve` ([L40](https://github.com/jameshuntt/klepto/blob/9c3f4d22b8aeda818311a01caac188c64eac6cd1/tests/lock.rs#L40)); `a_model_from_the_manifest_is_the_model_cargo_metadata_gives` ([L47](https://github.com/jameshuntt/klepto/blob/9c3f4d22b8aeda818311a01caac188c64eac6cd1/tests/lock.rs#L47)): the model made from the manifest's lists equals the one made from cargo's output; `a_requirement_is_met_or_not_by_semvers_answer` ([L63](https://github.com/jameshuntt/klepto/blob/9c3f4d22b8aeda818311a01caac188c64eac6cd1/tests/lock.rs#L63)).
+- Every existing test passes unchanged: `cargo test`, 0 failed.
+- Nothing public removed or changed: the rustdoc JSON of 0.3.4 and 0.3.5 differ by 137 additions (40 without the derived and blanket trait impls: the module `resolve::lock`, its five types and their fields, eight functions) and no removal.
+
 ## 0.3.4 (2026-10-20)
 
 A crate's features as a change leaves them. custodian's `declare_feature` writes a feature into a manifest, and three things in klepto's feature model stood in the way. A program built through change specs (the pantry) found all three: a feature named like the dependency it turns on was never written; a `cfg_attr` derive was read as a use of the dependency without its feature, which put the whole crate behind it; and nothing could say what a feature not declared yet would bring, or whether `a/y` names a feature `a` has.
