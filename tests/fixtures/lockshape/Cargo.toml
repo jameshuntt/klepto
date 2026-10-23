@@ -1,0 +1,6 @@
+# Two members that ask for two versions of one package (path packages, so cargo reads it offline), each with the
+# rust-version it declares.
+[workspace]
+members = ["app", "tool"]
+exclude = ["dup-0.1", "dup-0.2"]
+resolver = "2"

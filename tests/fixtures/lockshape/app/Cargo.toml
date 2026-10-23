@@ -1,0 +1,14 @@
+[package]
+name = "app"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.60"
+
+[features]
+default = ["fast"]
+fast = ["dup/quick"]
+extra = ["dep:tool"]
+
+[dependencies]
+dup = { path = "../dup-0.1" }
+tool = { path = "../tool", optional = true }

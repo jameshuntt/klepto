@@ -25,6 +25,7 @@ pub use crate::typing::types::{
 };
 
 pub use crate::resolve::cfg::{CfgEnv, CfgPredicate, Implication};
+pub use crate::resolve::lock::{version_meets, CargoPackage, CargoWorkspace, DeclaredDependency, ResolvedEdge, ResolvedNode};
 pub use crate::resolve::features::{DepInfo, DepKind, EnableBy, FeatureEdge, FeatureEnable, FeatureInfo, FeatureKey, FeatureModel, UngatedUse};
 pub use crate::graph::{Affected, CfgEdgeViolation, EdgeKind, FeatureChain, FeatureItemMap, FeatureItems, ItemEdge, ItemGraph, ItemNode, NodeKind, UnresolvedReference};
 pub use crate::gate::oracle::{

@@ -577,35 +577,57 @@ pub(crate) fn build_feature_models(meta: &cargo_metadata::Metadata, scanned: &[S
         if !scanned.contains(&package) {
             continue;
         }
-        let mut model = FeatureModel { package: package.clone(), ..Default::default() };
-        for d in &pkg.dependencies {
-            let kind = match d.kind {
-                cargo_metadata::DependencyKind::Development => DepKind::Dev,
-                cargo_metadata::DependencyKind::Build => DepKind::Build,
-                _ => DepKind::Normal,
-            };
-            model.dependencies.push(DepInfo {
-                name: norm(d.rename.as_deref().unwrap_or(&d.name)),
-                package: d.name.clone(),
-                optional: d.optional,
-                kind,
-                target: d.target.as_ref().map(|t| CfgPredicate::parse_str(&t.to_string())),
-                default_features: d.uses_default_features,
-                features: d.features.clone(),
-                implicit_feature: false,
-            });
-        }
-        for (name, list) in &pkg.features {
-            let enables = list.iter().map(|s| parse_enable(s)).collect();
-            model.features.insert(name.clone(), FeatureInfo { enables, implicit: false });
-        }
-
-        // Implicit features for optional dependencies not referenced with `dep:`
-        recompute_implicit(&mut model);
-
-        out.insert(package, model);
+        out.insert(package, feature_model_of(pkg));
     }
     out
+}
+
+/// A dependency as `cargo metadata` declares it, in the model's terms.
+pub(crate) fn dep_info_of(d: &cargo_metadata::Dependency) -> DepInfo {
+    let kind = match d.kind {
+        cargo_metadata::DependencyKind::Development => DepKind::Dev,
+        cargo_metadata::DependencyKind::Build => DepKind::Build,
+        _ => DepKind::Normal,
+    };
+    DepInfo {
+        name: norm(d.rename.as_deref().unwrap_or(&d.name)),
+        package: d.name.clone(),
+        optional: d.optional,
+        kind,
+        target: d.target.as_ref().map(|t| CfgPredicate::parse_str(&t.to_string())),
+        default_features: d.uses_default_features,
+        features: d.features.clone(),
+        implicit_feature: false,
+    }
+}
+
+/// One package's model, from its `cargo metadata` entry.
+pub(crate) fn feature_model_of(pkg: &cargo_metadata::Package) -> FeatureModel {
+    FeatureModel::from_declared(&norm(&pkg.name), pkg.features.iter().map(|(n, l)| (n.clone(), l.clone())), pkg.dependencies.iter().map(dep_info_of).collect())
+}
+
+impl FeatureEnable {
+    /// One `[features]` entry as cargo spells it, in its four forms: `feat`, `dep:name`, `name/feat`, `name?/feat`
+    /// (a dependency's name `-` → `_`).
+    pub fn parse(entry: &str) -> FeatureEnable {
+        parse_enable(entry)
+    }
+}
+
+impl FeatureModel {
+    /// A package's model from its `[features]` lists as written and its dependencies, with cargo's implicit features
+    /// for the optional dependencies no feature names with `dep:`: the same model `cargo metadata` gives, for a
+    /// manifest cargo cannot read yet (or a package it never saw).
+    pub fn from_declared(package: &str, features: impl IntoIterator<Item = (String, Vec<String>)>, dependencies: Vec<DepInfo>) -> FeatureModel {
+        let mut model = FeatureModel { package: package.to_string(), dependencies, ..Default::default() };
+        for (name, list) in features {
+            let enables = list.iter().map(|s| parse_enable(s)).collect();
+            model.features.insert(name, FeatureInfo { enables, implicit: false });
+        }
+        // Implicit features for optional dependencies not referenced with `dep:`
+        recompute_implicit(&mut model);
+        model
+    }
 }
 
 impl Klepto {

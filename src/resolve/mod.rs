@@ -8,6 +8,7 @@
 pub mod cfg;
 pub mod expand;
 pub mod features;
+pub mod lock;
 
 use crate::resolve::cfg::{cfg_of_attrs, CfgEnv, CfgPredicate, Implication};
 use crate::syntax::extract::{fq_name, imports_from_item_use};
